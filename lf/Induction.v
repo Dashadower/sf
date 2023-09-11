@@ -570,7 +570,6 @@ Qed.
     rewrite [a] to [b] in the goal, and add [P] as a new subgoal. Use
     that in the inductive step of this exercise. *)
 
-Check leb.
 
 Theorem plus_leb_compat_l : forall n m p : nat,
   n <=? m = true -> (p + n) <=? (p + m) = true.
@@ -786,10 +785,10 @@ Theorem bin_to_nat_pres_incr : forall b : bin,
   bin_to_nat (incr b) = 1 + bin_to_nat b.
 Proof.
   intros b.
-  induction b as [|n0' IHn0' | n1' IHn1'].
+  induction b as [|b0' IHb0' | b1' IHb1'].
     - simpl. reflexivity.
     - simpl. reflexivity.
-    - simpl. rewrite -> IHn1'. simpl. rewrite <- plus_n_Sm. reflexivity.
+    - simpl. rewrite -> IHb1'. simpl. rewrite <- plus_n_Sm. reflexivity.
 Qed.
 
 (** [] *)
@@ -927,11 +926,7 @@ Fixpoint normalize (b:bin) : bin :=
   match b with
     | Z => Z
     | B1 b' => B1 (normalize b')
-    | B0 b' => (* pass down just z if insignificant, else normalize b' *)
-      match normalize b' with
-        | Z => Z
-        | _ => B0 (normalize b')
-      end
+    | B0 b' => double_bin (normalize b')  (* {just keep Z if Z, else B0 b'} equals double_bin!!! *)
   end.
 
 (** It would be wise to do some [Example] proofs to check that your definition of
@@ -956,11 +951,10 @@ Proof. simpl. reflexivity. Qed.
 Theorem bin_nat_bin : forall b, nat_to_bin (bin_to_nat b) = normalize b.
 Proof.
   intros b.
-  induction b as [| b0' IHb0' | b0' IHb0'].
+  induction b as [| b0' IHb0' | b1' IHb1'].
     - simpl. reflexivity.
-    - assert (HB0: B0 b0' = incr b0'). {
-      
-    }
+    - simpl.
+Abort.
 
 (** [] *)
 
