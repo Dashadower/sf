@@ -1016,7 +1016,10 @@ Proof.
   intros s.
   induction s as [| n s' IHs'].
     - simpl. reflexivity.
-    - 
+    - destruct n eqn:Eqn.
+      + simpl. rewrite leb_n_Sn. reflexivity.
+      + simpl. rewrite IHs'. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (bag_count_sum)
@@ -1028,9 +1031,26 @@ Proof.
     [=?] you may find it useful to know that [destruct] works on
     arbitrary expressions, not just simple identifiers.)
 *)
-(* FILL IN HERE
 
-    [] *)
+Search (_ + _ = _ + _) inside Basics.
+
+Theorem bag_count_sum : forall s p : bag, forall n : nat,
+  (count n s) + (count n p) = count n (sum s p).
+Proof.
+  intros s p.
+  intros n.
+  induction s as [| sn s' IHs'].
+    - replace (sum [] p) with (p). simpl. reflexivity.
+      + induction p as [| pn p' IHp'].
+          * simpl. reflexivity.
+          * simpl. reflexivity.
+    - destruct (sn =? n) eqn:Eq_eq_sn_n.
+      + simpl. rewrite Eq_eq_sn_n.
+        induction p as [| pn p' IHp'].
+          * simpl. rewrite Eq_eq_sn_n. rewrite add_comm. simpl. reflexivity.
+          * simpl. rewrite Eq_eq_sn_n.
+Admitted.
+(* [] *)
 
 (** **** Exercise: 3 stars, advanced (involution_injective) *)
 
@@ -1042,7 +1062,14 @@ Proof.
 Theorem involution_injective : forall (f : nat -> nat),
     (forall n : nat, n = f (f n)) -> (forall n1 n2 : nat, f n1 = f n2 -> n1 = n2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros f.
+  intros n n1 n2.
+  intros H.
+  rewrite n.
+  rewrite <- H.
+  rewrite <- n.
+  simpl. reflexivity.
+Qed.
 
 (** [] *)
 
@@ -1056,7 +1083,14 @@ Proof.
 Theorem rev_injective : forall (l1 l2 : natlist),
   rev l1 = rev l2 -> l1 = l2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2.
+  intros H.
+  rewrite <- rev_involutive.
+  rewrite <- H.
+  rewrite rev_involutive.
+  simpl.
+  reflexivity.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1127,17 +1161,20 @@ Definition option_elim (d : nat) (o : natoption) : nat :=
     Using the same idea, fix the [hd] function from earlier so we don't
     have to pass a default element for the [nil] case.  *)
 
-Definition hd_error (l : natlist) : natoption
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition hd_error (l : natlist) : natoption :=
+  match l with
+    | nil => None
+    | h :: t => Some h
+  end.
 
 Example test_hd_error1 : hd_error [] = None.
- (* FILL IN HERE *) Admitted.
+ Proof. simpl. reflexivity. Qed.
 
 Example test_hd_error2 : hd_error [1] = Some 1.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 Example test_hd_error3 : hd_error [5;6] = Some 5.
- (* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 
 (** [] *)
 
@@ -1148,7 +1185,12 @@ Example test_hd_error3 : hd_error [5;6] = Some 5.
 Theorem option_elim_hd : forall (l:natlist) (default:nat),
   hd default l = option_elim default (hd_error l).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l.
+  intros default.
+  induction l as [| ln' l' IHl'].
+    - simpl. reflexivity.
+    - simpl. reflexivity.
+Qed.
 (** [] *)
 
 End NatList.
@@ -1179,10 +1221,16 @@ Definition eqb_id (x1 x2 : id) :=
   | Id n1, Id n2 => n1 =? n2
   end.
 
+Search (_ =? _) in Induction.
+
 (** **** Exercise: 1 star, standard (eqb_id_refl) *)
 Theorem eqb_id_refl : forall x, eqb_id x x = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x.
+  induction x as [xn'].
+    simpl. rewrite eqb_refl. reflexivity.
+Qed.
+
 (** [] *)
 
 (** Now we define the type of partial maps: *)
@@ -1228,7 +1276,11 @@ Theorem update_eq :
   forall (d : partial_map) (x : id) (v: nat),
     find x (update d x v) = Some v.
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros d x v.
+  induction x as [xn].
+  simpl. rewrite eqb_refl. reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, standard (update_neq) *)
@@ -1236,7 +1288,15 @@ Theorem update_neq :
   forall (d : partial_map) (x y : id) (o: nat),
     eqb_id x y = false -> find x (update d y o) = find x d.
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros d x y o.
+  induction x as [xn].
+  induction y as [yn].
+  simpl.
+  intros H.
+  rewrite H.
+  reflexivity.
+Qed.
+
 (** [] *)
 End PartialMap.
 
@@ -1251,8 +1311,20 @@ Inductive baz : Type :=
 (** How _many_ elements does the type [baz] have? (Explain in words,
     in a comment.) *)
 
-(* FILL IN HERE *)
+(* 8 dinstinct elements in an infinite chain, since baz can be either:
+1. Baz1 with x = Baz1
+2. Baz1 with x = Baz2, where
+  2-1. y = Baz1, where
+    2-1-1. b = T
+    2-1-2. b = F
+  2-2. y = Baz2, where
+    2-2-1. b = T
+    2-2-2. b = F
+3. Baz2 with x = Baz1
+4. Baz2 with x = Baz2, which follows from 2.
 
+These 8 forms of Baz1/Baz2 form a inductive definition of baz.
+*)
 (** [] *)
 
 (* 2023-08-23 11:29 *)
