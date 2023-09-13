@@ -1049,7 +1049,7 @@ Proof.
         induction p as [| pn p' IHp'].
           * simpl. rewrite Eq_eq_sn_n. rewrite add_comm. simpl. reflexivity.
           * simpl. rewrite Eq_eq_sn_n.
-Admitted.
+Abort.
 (* [] *)
 
 (** **** Exercise: 3 stars, advanced (involution_injective) *)
