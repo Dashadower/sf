@@ -1305,16 +1305,18 @@ Proof. reflexivity. Qed.
     Finding the right type can be tricky. *)
 
 Definition exp (n m : cnat) : cnat :=
-  fun (X : Type) (f : X -> X) (arg : X) => mult n (m X ()).
+  fun (X : Type) (f : X -> X) (arg : X) => (m X (n X f)) arg.
 
 Example exp_1 : exp two two = plus two two.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
+
+Compute exp one zero.
 
 Example exp_2 : exp three zero = one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. Admitted.
 
 Example exp_3 : exp three two = plus (mult two (mult two two)) one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. Admitted.
 
 (** [] *)
 

@@ -73,7 +73,16 @@ Theorem silly_ex : forall p,
   even p = true ->
   odd (S p) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros p.
+  intros H.
+  intros H2.
+  intros H3.
+  apply H2.
+  apply H.
+  apply H3.
+Qed.
+  
+
 (** [] *)
 
 (** To use the [apply] tactic, the (conclusion of the) fact
@@ -108,7 +117,12 @@ Theorem rev_exercise1 : forall (l l' : list nat),
   l = rev l' ->
   l' = rev l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l l'.
+  intros H.
+  rewrite H.
+  symmetry.
+  apply rev_involutive.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard, optional (apply_rewrite)
@@ -118,7 +132,9 @@ Proof.
     applied? *)
 
 (* FILL IN HERE
-
+  The difference is in implications with universal quantifiers; apply can infer the 
+  premise being True which implies the conclusion must be false. It can match and 
+  replace accordingly while rewrite just naively substitutes.
     [] *)
 
 (* ################################################################# *)
@@ -191,7 +207,13 @@ Example trans_eq_exercise : forall (n m o p : nat),
      (n + p) = m ->
      (n + p) = (minustwo o).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m o p.
+  intros H1.
+  intros H2.
+  transitivity m.
+    - apply H2.
+    - apply H1.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -278,7 +300,20 @@ Example injection_ex3 : forall (X : Type) (x y z : X) (l j : list X),
   j = z :: l ->
   x = y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X.
+  intros x y z.
+  intros l j.
+  intros H.
+  intros H2.
+  injection H as H3 H4.
+  assert (y :: l = z :: l). {
+    transitivity j. apply H4. apply H2.
+  }
+  injection H as H5.
+  rewrite H5.
+  apply H3.
+Qed.
+  
 (** [] *)
 
 (** So much for injectivity of constructors.  What about disjointness? *)
@@ -328,7 +363,13 @@ Example discriminate_ex3 :
     x :: y :: l = [] ->
     x = z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X.
+  intros x y z.
+  intros l.
+  intros H.
+  intros H2.
+  discriminate.
+Qed.
 (** [] *)
 
 (** For a slightly more involved example, we can use [discriminate] to
@@ -382,7 +423,7 @@ Proof. intros n m H. apply f_equal. apply H. Qed.
     [reflexivity]) will be automatically discharged by [f_equal]. *)
 
 Theorem eq_implies_succ_equal' : forall (n m : nat),
-  n = m -> S n = S m.
+  n = m -> S n = S m. 
 Proof. intros n m H. f_equal. apply H. Qed.
 
 (* ################################################################# *)
@@ -593,7 +634,19 @@ Proof.
 Theorem eqb_true : forall n m,
   n =? m = true -> n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n as [| n' IHn'].
+    - intros m. intros H. 
+      destruct m eqn:Em.
+        + reflexivity.
+        + simpl in H. discriminate.
+    - intros m.
+      intros H.
+      destruct m eqn:Em.
+        + discriminate.
+        + apply IHn' in H. f_equal. apply H.
+Qed.
+      
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (eqb_true_informal)
@@ -616,7 +669,13 @@ Theorem plus_n_n_injective : forall n m,
   n + n = m + m ->
   n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n as [| n' IHn'].
+    - simpl. intros m. intros H. symmetry in H.
+      destruct m eqn:Em.
+        + reflexivity.
+        + discriminate H.
+    - intros m. intros H. 
 (** [] *)
 
 (** The strategy of doing fewer [intros] before an [induction] to
