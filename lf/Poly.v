@@ -1016,8 +1016,8 @@ Qed.
 Definition fold_map {X Y: Type} (f: X -> Y) (l: list X) : list Y :=
   match l with
     | [] => []
-    (* | h :: t => fold app (fold (fun val m => [[f val]] ++ m) l []) [] *)
-    | h :: t => [f h]
+    | h :: t => fold app (fold (fun val m => [[f val]] ++ m) l []) []
+    (* | _ => fold app ([fun val => ]) [] *)
   end.
 
 Example fold_app1 : fold_map plus3 [1;2;3;4] = [4;5;6;7].
@@ -1028,11 +1028,6 @@ Proof. simpl. reflexivity. Qed.
     [reflexivity] simplifies expressions a bit more aggressively than
     [simpl].) *)
 
-Lemma fold_map_distr : forall (X Y : Type) (f : X -> Y) (l1 l2: list X),
-  fold_map f (l1 ++ l2) = (fold_map f l1) ++ (fold_map f l2).
-Proof.
-Abort.
-
 Theorem fold_map_correct : forall (X Y : Type) (f : X -> Y) (l: list X),
   fold_map f l = map f l.
 Proof.
@@ -1041,7 +1036,11 @@ Proof.
   intros l.
   induction l as [| hl ll IHl].
     - reflexivity.
-    - 
+    - simpl. rewrite <- IHl. 
+      induction ll as [| hl' ll' IHll'].
+        + simpl. reflexivity.
+        + simpl. reflexivity.
+Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_fold_map : option (nat*string) := None.
@@ -1079,8 +1078,8 @@ Definition prod_curry {X Y Z : Type}
     the theorems below to show that the two are inverses. *)
 
 Definition prod_uncurry {X Y Z : Type}
-  (f : X -> Y -> Z) (p : X * Y) : Z
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  (f : X -> Y -> Z) (p : X * Y) : Z :=
+    f (fst p) (snd p).
 
 (** As a (trivial) example of the usefulness of currying, we can use it
     to shorten one of the examples that we saw above: *)
@@ -1099,13 +1098,26 @@ Theorem uncurry_curry : forall (X Y Z : Type)
                         x y,
   prod_curry (prod_uncurry f) x y = f x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X Y Z.
+  intros f.
+  simpl.
+  intros x y.
+  reflexivity.
+Qed.
+  
 
 Theorem curry_uncurry : forall (X Y Z : Type)
                         (f : (X * Y) -> Z) (p : X * Y),
   prod_uncurry (prod_curry f) p = f p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X Y Z.
+  intros f.
+  intros p.
+  simpl.
+  induction p as [fp sp].
+    - simpl. reflexivity.
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (nth_error_informal)
@@ -1124,7 +1136,6 @@ Proof.
 
    Make sure to state the induction hypothesis _explicitly_.
 *)
-(* FILL IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_informal_proof : option (nat*string) := None.
@@ -1215,17 +1226,17 @@ Proof. reflexivity. Qed.
     => f^n x] as input, [scc] should produce [fun X f x => f^(n+1) x] as
     output. In other words, do it [n] times, then do it once more. *)
 
-Definition scc (n : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition scc (n : cnat) : cnat := 
+  fun (X: Type) (f: X -> X) (x : X) => f ((n X f) x).
 
 Example scc_1 : scc zero = one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example scc_2 : scc one = two.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example scc_3 : scc two = three.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 (** [] *)
 
@@ -1239,18 +1250,18 @@ Proof. (* FILL IN HERE *) Admitted.
     Hint: the "zero" argument to a Church numeral need not be just
     [x]. *)
 
-Definition plus (n m : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition plus (n m : cnat) : cnat :=
+  fun (X : Type) (f : X -> X) (arg : X) => m X f (n X f arg).
 
 Example plus_1 : plus zero one = one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Admitted.
 
 Example plus_2 : plus two three = plus three two.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Admitted.
 
 Example plus_3 :
   plus (plus two two) three = plus one (plus three three).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Admitted.
 
 (** [] *)
 
@@ -1268,17 +1279,17 @@ Proof. (* FILL IN HERE *) Admitted.
     which a type contains itself. So leave the type argument
     unchanged. *)
 
-Definition mult (n m : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition mult (n m : cnat) : cnat :=
+  fun (X : Type) (f : X -> X) (arg : X) => m X (n X f) arg.
 
 Example mult_1 : mult one one = one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example mult_2 : mult zero (plus three three) = zero.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example mult_3 : mult two three = plus three three.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 (** [] *)
 
@@ -1293,8 +1304,8 @@ Proof. (* FILL IN HERE *) Admitted.
     But again, you cannot pass [cnat] itself as the type argument.
     Finding the right type can be tricky. *)
 
-Definition exp (n m : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition exp (n m : cnat) : cnat :=
+  fun (X : Type) (f : X -> X) (arg : X) => mult n (m X ()).
 
 Example exp_1 : exp two two = plus two two.
 Proof. (* FILL IN HERE *) Admitted.
