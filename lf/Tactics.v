@@ -665,6 +665,9 @@ Definition manual_grade_for_informal_proof : option (nat*string) := None.
 
     In addition to being careful about how you use [intros], practice
     using "in" variants in this proof.  (Hint: use [plus_n_Sm].) *)
+
+Search "plus_n_Sm".
+
 Theorem plus_n_n_injective : forall n m,
   n + n = m + m ->
   n = m.
@@ -675,7 +678,14 @@ Proof.
       destruct m eqn:Em.
         + reflexivity.
         + discriminate H.
-    - intros m. intros H. 
+    - simpl. intros m H. 
+      destruct m eqn:Em.
+        + discriminate.
+        + injection H as H1. rewrite <- plus_n_Sm in H1.
+          rewrite <- plus_n_Sm in H1. injection H1 as H2.
+          apply IHn' in H2. rewrite H2. reflexivity.
+Qed.
+ 
 (** [] *)
 
 (** The strategy of doing fewer [intros] before an [induction] to
@@ -782,7 +792,19 @@ Theorem nth_error_after_last: forall (n : nat) (X : Type) (l : list X),
   length l = n ->
   nth_error l n = None.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n X l.
+  generalize dependent l.
+  induction n as [| n' IHn'].
+    - intros l. intros H.
+      destruct l eqn:El.
+        + reflexivity.
+        + simpl. discriminate.
+    - intros l H.
+      destruct l eqn:El.
+        + discriminate.
+        + simpl. apply IHn'. injection H as H1. apply H1.
+Qed.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -961,6 +983,8 @@ Fixpoint split {X Y : Type} (l : list (X*Y))
       end
   end.
 
+(* Compute split [(1, true) ; (2, false) ; (3, true)]. *)
+
 (** Prove that [split] and [combine] are inverses in the following
     sense: *)
 
@@ -968,7 +992,18 @@ Theorem combine_split : forall X Y (l : list (X * Y)) l1 l2,
   split l = (l1, l2) ->
   combine l1 l2 = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X Y.
+  intros l.
+  induction l as [| hl ll IHl].
+    - intros l1 l2. simpl. intros H. injection H as H1 H2.
+      rewrite <- H1. rewrite <- H2. simpl. reflexivity.
+    - destruct hl. simpl. destruct (split ll).
+      intros l1 l2. intros H. injection H as H1 H2.
+      rewrite <- H1. rewrite <- H2. simpl. 
+      rewrite IHl. reflexivity. 
+      reflexivity.
+Qed.
+
 (** [] *)
 
 (** The [eqn:] part of the [destruct] tactic is optional; although
@@ -1043,7 +1078,19 @@ Theorem bool_fn_applied_thrice :
   forall (f : bool -> bool) (b : bool),
   f (f (f b)) = f b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros f b.
+  destruct b eqn:Eb.
+    - destruct (f true) eqn:Ef_true.
+      + rewrite Ef_true. apply Ef_true.
+      + destruct (f false) eqn:Ef_false.
+        * apply Ef_true.
+        * apply Ef_false.
+    - destruct (f false) eqn:Ef_false.
+      + destruct (f true) eqn:Ef_true.
+        * apply Ef_true.
+        * apply Ef_false.
+      + rewrite Ef_false. rewrite Ef_false. reflexivity.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1124,7 +1171,12 @@ Proof.
 Theorem eqb_sym : forall (n m : nat),
   (n =? m) = (m =? n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  destruct (n =? m) eqn:Eq.
+    - apply eqb_true in Eq. rewrite Eq. rewrite eqb_refl. reflexivity.
+    - 
+
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (eqb_sym_informal)
