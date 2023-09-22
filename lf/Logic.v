@@ -82,7 +82,7 @@ Definition injective {A B} (f : A -> B) :=
 
 Lemma succ_inj : injective S.
 Proof.
-  intros n m H. injection H as H1. apply H1.
+  unfold injective. intros n m H. injection H as H1. apply H1.
 Qed.
 
 (** The equality operator [=] is a (binary) function that returns a
@@ -148,7 +148,14 @@ Qed.
 Example and_exercise :
   forall n m : nat, n + m = 0 -> n = 0 /\ m = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  intros H.
+  destruct n eqn:Eqn in H.
+    - simpl in H. split.
+      + apply Eqn.
+      + apply H.
+    - simpl in H. discriminate H.
+Qed.
 (** [] *)
 
 (** So much for proving conjunctive statements.  To go in the other
@@ -226,7 +233,10 @@ Proof.
 Lemma proj2 : forall P Q : Prop,
   P /\ Q -> Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q.
+  intros [_ HQ].
+  apply HQ.
+Qed.
 (** [] *)
 
 (** Finally, we sometimes need to rearrange the order of conjunctions
@@ -253,7 +263,12 @@ Theorem and_assoc : forall P Q R : Prop,
   P /\ (Q /\ R) -> (P /\ Q) /\ R.
 Proof.
   intros P Q R [HP [HQ HR]].
-  (* FILL IN HERE *) Admitted.
+  split.
+    - split.
+      + apply HP.
+      + apply HQ.
+    - apply HR.
+Qed.
 (** [] *)
 
 (** By the way, the infix notation [/\] is actually just syntactic
@@ -317,14 +332,26 @@ Qed.
 Lemma mult_is_O :
   forall n m, n * m = 0 -> n = 0 \/ m = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  induction n.
+    - simpl. intros H. left. reflexivity.
+    - simpl. intros H. right. 
+      induction m.
+        + reflexivity.
+        + discriminate H.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, standard (or_commut) *)
 Theorem or_commut : forall P Q : Prop,
   P \/ Q  -> Q \/ P.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q.
+  intros [HP | HQ].
+    - right. apply HP.
+    - left. apply HQ.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -383,7 +410,10 @@ Proof.
 Theorem not_implies_our_not : forall (P:Prop),
   ~ P -> (forall (Q:Prop), P -> Q).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P.
+  unfold not.
+  intros H.
+  
 (** [] *)
 
 (** Inequality is a frequent enough form of negated statement
