@@ -1787,14 +1787,40 @@ Qed.
 
 Fixpoint eqb_list {A : Type} (eqb : A -> A -> bool)
                   (l1 l2 : list A) : bool :=
-  
+  match l1, l2 with
+    | nil, nil => true
+    | nil, _ => false
+    | _, nil => false
+    | h1 :: t1, h2 :: t2 => 
+      if eqb h1 h2 then eqb_list eqb t1 t2 else false
+  end.
+
+Compute eqb_list eqb [1] [1;2].
+Compute eqb_list eqb [1;2] [1;2].
+Check eqb 1 1 = true.
+
 
 Theorem eqb_list_true_iff :
   forall A (eqb : A -> A -> bool),
     (forall a1 a2, eqb a1 a2 = true <-> a1 = a2) ->
     forall l1 l2, eqb_list eqb l1 l2 = true <-> l1 = l2.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros A.
+  intros .
+  generalize dependent l2.
+  induction l1 as [|h l1' IHl1'].
+    - split.
+      + intros H1. simpl in H1. destruct l2.
+        * reflexivity.
+        * discriminate H1.
+      + intros H1. simpl. destruct l2.
+        * reflexivity.
+        * discriminate H1.
+    - split.
+      + intros H1. destruct l2.
+        * simpl in H1. discriminate H1.
+        * simpl in H1.
+
 
 (** [] *)
 
