@@ -1099,7 +1099,7 @@ Qed. (* I cheated - used specialze to apply hypothesis to implication since appl
 
 Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop :=
   (* if podd then podd else peven *)
-  fun m : nat => if (even m) then Peven m else Podd m
+  fun m : nat => if (even m) then Peven m else Podd m.
 
 (** To test your definition, prove the following facts: *)
 
@@ -1799,7 +1799,6 @@ Compute eqb_list eqb [1] [1;2].
 Compute eqb_list eqb [1;2] [1;2].
 Check eqb 1 1 = true.
 
-
 Theorem eqb_list_true_iff :
   forall A (eqb : A -> A -> bool),
     (forall a1 a2, eqb a1 a2 = true <-> a1 = a2) ->
@@ -1817,9 +1816,20 @@ Proof.
         * reflexivity.
         * discriminate H1.
     - split.
+      + intros H1. simpl in H1. destruct l2.
+        * discriminate H1.
+        * destruct (eqb h x) eqn:Eqhx.
+          ** apply IHl1' in H1. rewrite H1. apply H in Eqhx. rewrite Eqhx. reflexivity.
+          ** discriminate H1.
       + intros H1. destruct l2.
-        * simpl in H1. discriminate H1.
-        * simpl in H1.
+        * discriminate H1.
+        * rewrite <- H1. simpl. destruct (eqb h h) eqn:Eqh.
+          ** apply IHl1'. reflexivity.
+          ** replace (eqb h h) with (true) in Eqh. {
+            discriminate Eqh.
+          }
+          symmetry. rewrite H. reflexivity.
+Qed.
 
 
 (** [] *)
@@ -1832,13 +1842,31 @@ Proof.
 
 (** Copy the definition of [forallb] from your [Tactics] here
     so that this file can be graded on its own. *)
-Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool :=
+  match l with
+    | [] => true
+    | h :: l' => if test h then forallb test l' else false
+  end.
 
 Theorem forallb_true_iff : forall X test (l : list X),
   forallb test l = true <-> All (fun x => test x = true) l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X test.
+  induction l as [| hl l' IHl'].
+    - simpl. split.
+      + reflexivity.
+      + reflexivity.
+    - simpl. split.
+      + split.
+        * destruct (test hl) eqn:Eqhl.
+          ** reflexivity.
+          ** discriminate H.
+        * apply IHl'. destruct (test hl) eqn:Eqhl.
+          ** apply H.
+          ** discriminate H.
+      + intros [H1 H2]. rewrite H1. rewrite IHl'. apply H2.
+Qed.
+
 
 (** (Ungraded thought question) Are there any important properties of
     the function [forallb] which are not captured by this
@@ -1979,7 +2007,12 @@ Qed.
 Theorem excluded_middle_irrefutable: forall (P : Prop),
   ~ ~ (P \/ ~ P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P. unfold not.
+  intros H. apply H.
+  right. intros H1. apply H.
+  left. apply H1.
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (not_exists_dist)
@@ -2000,7 +2033,14 @@ Theorem not_exists_dist :
   forall (X:Type) (P : X -> Prop),
     ~ (exists x, ~ P x) -> (forall x, P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold excluded_middle.
+  intros em.
+  intros X P.
+  unfold not. 
+  intros H.
+
+  
+
 (** [] *)
 
 (** **** Exercise: 5 stars, standard, optional (classical_axioms)
