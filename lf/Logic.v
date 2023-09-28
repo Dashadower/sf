@@ -2033,13 +2033,18 @@ Theorem not_exists_dist :
   forall (X:Type) (P : X -> Prop),
     ~ (exists x, ~ P x) -> (forall x, P x).
 Proof.
-  unfold excluded_middle.
   intros em.
   intros X P.
-  unfold not. 
+  unfold not.
   intros H.
+  intros x.
+  unfold excluded_middle in em.
+  destruct (em (P x)).  (* apply em to P *)
+    - apply H0. (* P x is true *)
+    - (* ~ P x is true *) destruct H. unfold not in H0. exists x. (* HELP: how does destruct H work here? *)
+      apply H0.
+Qed.
 
-  
 
 (** [] *)
 
@@ -2072,7 +2077,7 @@ Definition implies_to_or := forall P Q:Prop,
   (P -> Q) -> (~P \/ Q).
 
 (* FILL IN HERE
-
+  SKIPPED
     [] *)
 
 (* 2023-08-23 11:29 *)
