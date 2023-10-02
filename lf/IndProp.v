@@ -881,19 +881,31 @@ Proof.
     - intros b. simpl. apply n_le_m__Sn_le_Sm. apply IHa.
 Qed.
 
-Theorem plus_le : forall n1 n2 m,
+Theorem plus_le : forall n1 n2 m,  (* HELP This one is a pain.. *)
   n1 + n2 <= m ->
   n1 <= m /\ n2 <= m.
 Proof.
   intros n1 n2 m.
   intros H.
-  induction n1.
-    - simpl in H. split.
-      + apply O_le_n.
-      + apply H.
+  inversion H.
     - split.
-      + apply le_S in H. simpl in H. apply Sn_le_Sm__n_le_m in H. apply IHn1 in H.
-        destruct H. 
+      + apply le_plus_l.
+      + rewrite add_comm. apply le_plus_l.
+    - split.
+      + induction n2.
+        * rewrite add_comm in H. simpl in H. rewrite <- H1 in H. apply H.
+        * rewrite add_comm in H. simpl in H. rewrite add_comm in H. apply le_S in H.
+          apply Sn_le_Sm__n_le_m in H. apply IHn2 in H. apply H.
+
+          rewrite add_comm in H0. simpl in H0. rewrite add_comm in H0. apply le_S in H0.
+          apply Sn_le_Sm__n_le_m in H0. apply H0.
+      + induction n1.
+        * simpl in H. rewrite <- H1 in H. apply H.
+        * simpl in H. apply le_S in H. apply Sn_le_Sm__n_le_m in H. apply IHn1 in H.
+          apply H.
+
+          simpl in H0. apply le_S in H0. apply Sn_le_Sm__n_le_m in H0. apply H0.
+Qed.
 
 Theorem add_le_cases : forall n m p q,
   n + m <= p + q -> n <= p \/ m <= q.
