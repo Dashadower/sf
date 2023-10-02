@@ -162,7 +162,8 @@ Inductive Perm3 {X : Type} : list X -> list X -> Prop :=
     [[3;2;1]]?  Is [[1;2;3]] a permutation of itself? *)
 
 (* FILL IN HERE
-
+    1. No, Perm3 must be applied at least twice to obtain 1 2 3
+    2. No.
     [] *)
 
 (* ================================================================= *)
@@ -282,7 +283,11 @@ Qed.
 Theorem ev_double : forall n,
   ev (double n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n. unfold double.
+  induction n.
+    - apply ev_0.
+    - apply ev_SS. apply IHn.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -402,8 +407,26 @@ Proof.
 Theorem SSSSev__even : forall n,
   ev (S (S (S (S n)))) -> ev n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  intros H.
+  inversion H. inversion H1. apply H3.
+Qed.
 (** [] *)
+
+Theorem SSSSev__even2 : forall n: nat,
+  ev (S (S (S (S n)))) -> ev n.
+Proof.
+  intros n.
+  intros H.
+  apply ev_inversion in H. destruct H.
+    - discriminate H.
+    - destruct H as [n' H]. destruct H.
+      injection H as H1.
+      apply ev_inversion in H0. destruct H0.
+        + rewrite H in H1. discriminate H1.
+        + destruct H. destruct H. rewrite H in H1.
+          injection H1 as H2. rewrite H2. apply H0.
+Qed.
 
 (** **** Exercise: 1 star, standard (ev5_nonsense)
 
@@ -412,7 +435,9 @@ Proof.
 Theorem ev5_nonsense :
   ev 5 -> 2 + 2 = 9.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros H.
+  simpl. inversion H. inversion H1. inversion H3.
+Qed.
 (** [] *)
 
 (** The [inversion] tactic does quite a bit of work. For
@@ -576,7 +601,15 @@ Qed.
 (** **** Exercise: 2 stars, standard (ev_sum) *)
 Theorem ev_sum : forall n m, ev n -> ev m -> ev (n + m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  intros evn.
+  intros evm.
+  induction evn.
+    - simpl. apply evm.
+    - simpl. induction n.
+      + simpl. apply ev_SS. apply evm.
+      + apply ev_SS. apply IHevn.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ev'_ev)
@@ -598,7 +631,18 @@ Inductive ev' : nat -> Prop :=
 
 Theorem ev'_ev : forall n, ev' n <-> ev n.
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros n.
+  split.
+    - intros H. induction H.
+        + apply ev_0.
+        + apply ev_SS. apply ev_0.
+        + apply ev_sum.
+          * apply IHev'1.
+          * apply IHev'2.
+    - intros H. induction H.
+        + apply ev'_0.
+        + apply (ev'_sum 2 n ev'_2 IHev).
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, especially useful (ev_ev__ev) *)
@@ -607,7 +651,16 @@ Theorem ev_ev__ev : forall n m,
   (* Hint: There are two pieces of evidence you could attempt to induct upon
       here. If one doesn't work, try the other. *)
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  intros evnm.
+  intros evn.
+  generalize dependent m.
+  induction evn.
+    - intros m. simpl. intros evm. apply evm.
+    - intros m. intros evSS_nm. simpl in evSS_nm. apply evSS_ev in evSS_nm.
+      apply IHevn in evSS_nm. apply evSS_nm.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (ev_plus_plus)
@@ -619,7 +672,29 @@ Proof.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m p.
+  intros evnm.
+  intros evnp.
+  assert (cev: ev (n+m + (n+p))). {
+    apply ev_sum.
+      - apply evnm.
+      - apply evnp.
+  }
+  replace (n + m + (n + p)) with (double n + (m + p)) in cev.
+    - apply ev_ev__ev with (n := double n) in cev.
+      + apply cev.
+      + apply ev_double.
+    - replace (n + m + (n + p)) with (n + n + (m + p)).
+        + rewrite double_plus. reflexivity. (* main goal *)
+        + (* replace *) rewrite add_assoc. rewrite add_assoc.
+          replace (n + m + n) with (n + n + m). 
+            * (* main goal *) reflexivity.
+            * (* replace, shuffle around addition*)
+              rewrite <- double_plus. rewrite <- add_assoc''.
+              rewrite add_shuffle3. rewrite <- double_plus.
+              rewrite add_comm. reflexivity.
+Qed.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -696,12 +771,13 @@ End Playground.
     between every pair of natural numbers. *)
 
 Inductive total_relation : nat -> nat -> Prop :=
-  (* FILL IN HERE *)
-.
+  | tr_S (n m : nat) : total_relation n m.
 
 Theorem total_relation_is_total : forall n m, total_relation n m.
-  Proof.
-  (* FILL IN HERE *) Admitted.
+Proof.
+  intros n m.
+  apply tr_S.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (empty_relation)
@@ -709,13 +785,15 @@ Theorem total_relation_is_total : forall n m, total_relation n m.
     Define an inductive binary relation [empty_relation] (on numbers)
     that never holds. *)
 
-Inductive empty_relation : nat -> nat -> Prop :=
-  (* FILL IN HERE *)
-.
+Inductive empty_relation : nat -> nat -> Prop := .
 
 Theorem empty_relation_is_empty : forall n m, ~ empty_relation n m.
-  Proof.
-  (* FILL IN HERE *) Admitted.
+Proof.
+  intros n m.
+  unfold not.
+  intros er.
+  destruct er.
+Qed.
 (** [] *)
 
 (** From the definition of [le], we can sketch the behaviors of
@@ -737,38 +815,85 @@ Theorem empty_relation_is_empty : forall n m, ~ empty_relation n m.
 (** **** Exercise: 5 stars, standard, optional (le_and_lt_facts) *)
 Lemma le_trans : forall m n o, m <= n -> n <= o -> m <= o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros m n o.
+  intros H.
+  intros H1.
+  transitivity n.
+    - apply H.
+    - apply H1.
+Qed.
+
 
 Theorem O_le_n : forall n,
   0 <= n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n.
+    - apply le_n.
+    - apply le_S. apply IHn.
+Qed.
 
 Theorem n_le_m__Sn_le_Sm : forall n m,
   n <= m -> S n <= S m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  intros H.
+  induction H.
+    - apply le_n.
+    - apply le_S. apply IHle.
+Qed.
 
 Theorem Sn_le_Sm__n_le_m : forall n m,
   S n <= S m -> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  intros H.
+  inversion H.
+    - apply le_n.
+    - rewrite <- H1. apply le_S. apply le_n.
+Qed.
 
 Theorem lt_ge_cases : forall n m,
   n < m \/ n >= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  induction n.
+    - destruct m eqn:Eqm.
+      + right. apply le_n.
+      + left. unfold lt. apply n_le_m__Sn_le_Sm. apply O_le_n.
+    - unfold lt in IHn. destruct IHn. 
+      + unfold lt. destruct m.
+        * right. apply O_le_n.
+        * apply Sn_le_Sm__n_le_m in H. inversion H.
+          ** right. rewrite <- H0. apply le_n.
+          ** left. apply n_le_m__Sn_le_Sm. apply n_le_m__Sn_le_Sm. apply H0.
+      + inversion H.
+        * right. apply le_S. apply le_n.
+        * right. rewrite H1. rewrite <- H1. apply le_S. apply le_S. apply H0.
+Qed.
 
 Theorem le_plus_l : forall a b,
   a <= a + b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros a.
+  induction a.
+    - simpl. intros b. apply O_le_n.
+    - intros b. simpl. apply n_le_m__Sn_le_Sm. apply IHa.
+Qed.
 
 Theorem plus_le : forall n1 n2 m,
   n1 + n2 <= m ->
   n1 <= m /\ n2 <= m.
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros n1 n2 m.
+  intros H.
+  induction n1.
+    - simpl in H. split.
+      + apply O_le_n.
+      + apply H.
+    - split.
+      + apply le_S in H. simpl in H. apply Sn_le_Sm__n_le_m in H. apply IHn1 in H.
+        destruct H. 
 
 Theorem add_le_cases : forall n m p q,
   n + m <= p + q -> n <= p \/ m <= q.
