@@ -896,14 +896,14 @@ Proof.
         * rewrite add_comm in H. simpl in H. rewrite <- H1 in H. apply H.
         * rewrite add_comm in H. simpl in H. rewrite add_comm in H. apply le_S in H.
           apply Sn_le_Sm__n_le_m in H. apply IHn2 in H. apply H.
-
+          (* Now prove second antecedent of IHn1*)
           rewrite add_comm in H0. simpl in H0. rewrite add_comm in H0. apply le_S in H0.
           apply Sn_le_Sm__n_le_m in H0. apply H0.
       + induction n1.
         * simpl in H. rewrite <- H1 in H. apply H.
         * simpl in H. apply le_S in H. apply Sn_le_Sm__n_le_m in H. apply IHn1 in H.
           apply H.
-
+          (* Now prove second antecedent of IHn1*)
           simpl in H0. apply le_S in H0. apply Sn_le_Sm__n_le_m in H0. apply H0.
 Qed.
 
@@ -911,63 +911,145 @@ Theorem add_le_cases : forall n m p q,
   n + m <= p + q -> n <= p \/ m <= q.
   (** Hint: May be easiest to prove by induction on [n]. *)
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros n m p q.
+  intros H.
+  generalize dependent m.
+  generalize dependent p.
+  generalize dependent q.
+  induction n as [| n' IHn'].
+    - intros q p m. simpl. intros H. left. apply O_le_n.
+    - intros q p m. intros H. destruct p.
+      + apply plus_le in H. destruct H. simpl in H0.
+        right. apply H0.
+      + simpl in H. apply Sn_le_Sm__n_le_m in H. apply IHn' in H. destruct H.
+        * left. apply n_le_m__Sn_le_Sm. apply H.
+        * right. apply H.
+Qed.
 
 Theorem plus_le_compat_l : forall n m p,
   n <= m ->
   p + n <= p + m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n.
+    - intros m p. intros H. rewrite add_comm. simpl. apply le_plus_l.
+    - intros m p. intros H. inversion H.
+      + apply le_n.
+      + rewrite add_comm. rewrite add_comm with (m := S m0). simpl.
+        apply n_le_m__Sn_le_Sm. rewrite add_comm. rewrite add_comm with (n := m0).
+        apply IHn. apply le_S in H0. apply Sn_le_Sm__n_le_m in H0. apply H0.
+Qed.
 
 Theorem plus_le_compat_r : forall n m p,
   n <= m ->
   n + p <= m + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n.
+    - intros m p. intros H. simpl. rewrite add_comm. apply le_plus_l.
+    - intros m p. intros H. destruct m.
+      + inversion H.
+      + apply Sn_le_Sm__n_le_m in H. apply (IHn _ p) in H.
+        simpl. apply n_le_m__Sn_le_Sm. apply H.
+Qed.
 
 Theorem le_plus_trans : forall n m p,
   n <= m ->
   n <= m + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n.
+    - intros m p. intros H.
+      apply O_le_n.
+    - intros m p H. destruct m.
+      + inversion H.
+      + apply Sn_le_Sm__n_le_m in H. apply (IHn _ p) in H.
+        simpl. apply n_le_m__Sn_le_Sm. apply H.
+Qed.
 
 Theorem n_lt_m__n_le_m : forall n m,
   n < m ->
   n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n.
+    - intros m H.
+      apply O_le_n.
+    - intros m H.
+      unfold lt in H. apply le_S in H. apply Sn_le_Sm__n_le_m in H.
+      apply H.
+Qed.
 
 Theorem plus_lt : forall n1 n2 m,
   n1 + n2 < m ->
   n1 < m /\ n2 < m.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros n1 n2.
+  induction n1.
+    - intros m.
+      simpl. intros H. destruct m.
+        + unfold lt in *. inversion H.
+        + split.
+          * unfold lt. apply n_le_m__Sn_le_Sm. apply O_le_n.
+          * apply H.
+    - intros m H. destruct m.
+      + inversion H.
+      + simpl in H. unfold lt in *. apply Sn_le_Sm__n_le_m in H. apply IHn1 in H.
+        destruct H. split.
+          * apply n_le_m__Sn_le_Sm. apply H.
+          * apply le_S in H0. apply H0.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, standard, optional (more_le_exercises) *)
 Theorem leb_complete : forall n m,
   n <=? m = true -> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n.
+    - intros m H. apply O_le_n.
+    - intros m. intros H.  destruct m.
+      + simpl in H. discriminate H.
+      + simpl in H. apply IHn in H. apply n_le_m__Sn_le_Sm. apply H.
+Qed.
 
 Theorem leb_correct : forall n m,
   n <= m ->
   n <=? m = true.
   (** Hint: May be easiest to prove by induction on [m]. *)
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n.
+  induction n.
+    - intros m H. simpl. reflexivity.
+    - intros m H. destruct m.
+      + inversion H.
+      + apply Sn_le_Sm__n_le_m in H. apply IHn in H. simpl.
+        apply H.
+Qed.
 
 (** Hint: The next two can easily be proved without using [induction]. *)
 
 Theorem leb_iff : forall n m,
   n <=? m = true <-> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  split.
+    - intros H. apply leb_complete in H. apply H.
+    - intros H. apply leb_correct in H. apply H.
+Qed.
 
 Theorem leb_true_trans : forall n m o,
   n <=? m = true -> m <=? o = true -> n <=? o = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m o.
+  intros H1.
+  intros H2.
+  apply leb_complete in H1.
+  apply leb_complete in H2.
+  apply (le_trans n m o) in H1.
+   - apply leb_correct. apply H1.
+   - apply H2.
+Qed.
 (** [] *)
 
 Module R.
@@ -987,16 +1069,22 @@ Inductive R : nat -> nat -> nat -> Prop :=
 .
 
 (** - Which of the following propositions are provable?
-      - [R 1 1 2]
-      - [R 2 2 6]
+      - [R 1 1 2] : c4(0 0 0) -> c1
+      - [R 2 2 6] : not provable. c4(1 1 4) -> c4(0 0 2) 
 
     - If we dropped constructor [c5] from the definition of [R],
       would the set of provable propositions change?  Briefly (1
       sentence) explain your answer.
 
+      No. operations for m n are equal since c2 and c3 all apply the same
+      operations for m/o or n/o. 
+
     - If we dropped constructor [c4] from the definition of [R],
       would the set of provable propositions change?  Briefly (1
       sentence) explain your answer. *)
+
+      (* Yes. c4 can be seen as a constructor that "reduces" arguments so provable arguemnts
+        decrease to 0. if c4 is to be removed, only R 0 0 0 is provable. *)
 
 (* FILL IN HERE *)
 
@@ -1010,12 +1098,31 @@ Definition manual_grade_for_R_provability : option (nat*string) := None.
     Figure out which function; then state and prove this equivalence
     in Coq. *)
 
-Definition fR : nat -> nat -> nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition fR :nat -> nat -> nat :=
+  fun (m n: nat) => m + n.
+
 
 Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros m n o.
+  split.
+    - unfold fR. intros H. induction H.
+      + reflexivity.
+      + simpl. rewrite IHR. reflexivity.
+      + rewrite add_comm. simpl. rewrite add_comm. rewrite IHR. reflexivity.
+      + simpl in IHR. injection IHR as IHR. rewrite <- plus_n_Sm in IHR. injection IHR as IHR.
+        apply IHR.
+      + rewrite add_comm. apply IHR.
+    - unfold fR. intros H. induction m.
+      + induction n.
+        * destruct o.
+          ** apply c1.
+          ** rewrite <- H. simpl. apply c1.
+        * destruct o eqn:Eqo.
+          ** simpl in H. rewrite H. apply c1.
+          ** simpl in H. simpl in IHn. 
+      
+            
 (** [] *)
 
 End R.
