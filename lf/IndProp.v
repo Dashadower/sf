@@ -1101,7 +1101,6 @@ Definition manual_grade_for_R_provability : option (nat*string) := None.
 Definition fR :nat -> nat -> nat :=
   fun (m n: nat) => m + n.
 
-
 Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
 Proof.
   intros m n o.
@@ -1113,16 +1112,28 @@ Proof.
       + simpl in IHR. injection IHR as IHR. rewrite <- plus_n_Sm in IHR. injection IHR as IHR.
         apply IHR.
       + rewrite add_comm. apply IHR.
-    - unfold fR. intros H. induction m.
-      + induction n.
-        * destruct o.
-          ** apply c1.
-          ** rewrite <- H. simpl. apply c1.
-        * destruct o eqn:Eqo.
-          ** simpl in H. rewrite H. apply c1.
-          ** simpl in H. simpl in IHn. 
-      
-            
+    - unfold fR. generalize dependent n. generalize dependent o.
+      induction m.
+        * intros o n. generalize dependent o.
+          induction n.
+            + intros o H. rewrite <- H. apply c1.
+            + destruct o.
+                ** intros H. simpl in H. discriminate H.
+                ** simpl in IHn. simpl. intros H. apply c3. apply IHn.
+                  injection H as H1. apply H1.
+        * intros o n. generalize dependent o.
+          induction n.
+            + intros o H. rewrite add_comm in H. simpl in H.
+              destruct o.
+                ** rewrite H. apply c1.
+                ** rewrite <- H. apply c2. apply IHm. rewrite add_comm. simpl. reflexivity.
+            + intros o H.
+              destruct o.
+                ** simpl in H. discriminate H.
+                ** apply c3. apply IHn. simpl in H. injection H as H. rewrite add_comm in H. simpl in H.
+                   rewrite plus_n_Sm in H. rewrite add_comm. apply H.
+Qed.
+
 (** [] *)
 
 End R.
@@ -1164,18 +1175,47 @@ End R.
       is a subsequence of [l3], then [l1] is a subsequence of [l3]. *)
 
 Inductive subseq : list nat -> list nat -> Prop :=
-(* FILL IN HERE *)
+  | ss1: subseq [] []
+  | ss2 (l1 l2: list nat): forall (n: nat), subseq l1 l2 -> subseq l1 (n :: l2)
+  | ss3 (l1 l2: list nat): forall (n: nat), subseq l1 l2 -> subseq (n :: l1) (n :: l2)
 .
 
 Theorem subseq_refl : forall (l : list nat), subseq l l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l.
+  induction l.
+    - apply ss1.
+    - apply ss3. apply IHl.
+Qed.
+
+Lemma subseq_lnil : forall (l : list nat), subseq [] l.
+Proof.
+    intros l.
+    induction l.
+      - apply ss1.
+      - apply ss2. apply IHl.
+Qed.
+
+Lemma subseq_cons : forall (l1 l2 : list nat) (n : nat),
+  subseq l1 l2 -> subseq l1 (n :: l2).
+Proof.
+  intros l1 l2.
+  induction l1.
+    - intros . apply subseq_lnil.
+    - intros . apply ss2. apply H.
+Qed.
 
 Theorem subseq_app : forall (l1 l2 l3 : list nat),
   subseq l1 l2 ->
   subseq l1 (l2 ++ l3).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros .
+  generalize dependent l2.
+  generalize dependent l1.
+  induction l3.
+    - intros . rewrite app_nil_r. apply H.
+    - intros . apply IHl3 in H. inversion H.
+      + 
 
 Theorem subseq_trans : forall (l1 l2 l3 : list nat),
   subseq l1 l2 ->
