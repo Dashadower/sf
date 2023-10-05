@@ -954,7 +954,7 @@ Proof.
   induction b as [| b0' IHb0' | b1' IHb1'].
     - simpl. reflexivity.
     - simpl.
-Admitted.
+Admitted. (* HELP *)
 
 (** [] *)
 

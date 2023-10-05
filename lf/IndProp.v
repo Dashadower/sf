@@ -659,7 +659,7 @@ Proof.
     - intros m. simpl. intros evm. apply evm.
     - intros m. intros evSS_nm. simpl in evSS_nm. apply evSS_ev in evSS_nm.
       apply IHevn in evSS_nm. apply evSS_nm.
-Qed.
+Qed.  
 
 (** [] *)
 
@@ -1210,12 +1210,12 @@ Theorem subseq_app : forall (l1 l2 l3 : list nat),
   subseq l1 (l2 ++ l3).
 Proof.
   intros .
-  generalize dependent l2.
-  generalize dependent l1.
-  induction l3.
-    - intros . rewrite app_nil_r. apply H.
-    - intros . apply IHl3 in H. inversion H.
-      + 
+  generalize dependent l3.
+  induction H.
+    - intros . apply subseq_lnil.
+    - intros l. simpl. apply ss2. apply IHsubseq.
+    - intros . simpl. apply ss3. apply IHsubseq.
+Qed.
 
 Theorem subseq_trans : forall (l1 l2 l3 : list nat),
   subseq l1 l2 ->
@@ -1223,8 +1223,16 @@ Theorem subseq_trans : forall (l1 l2 l3 : list nat),
   subseq l1 l3.
 Proof.
   (* Hint: be careful about what you are doing induction on and which
-     other things need to be generalized... *)
-  (* FILL IN HERE *) Admitted.
+     other things need to be generalized... *)    
+  intros.
+  generalize dependent l1.
+  induction H0.
+    - intros . apply H.
+    - intros . apply ss2. apply IHsubseq. apply H.
+    - intros . inversion H.
+      + apply ss2. apply IHsubseq. apply H3.
+      +  apply ss3. apply IHsubseq. apply H3.
+Qed. (* HELP - solved it but why dos `induction H0` work here? *)
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (R_provability2)
@@ -1238,13 +1246,34 @@ Proof.
 
     Which of the following propositions are provable?
 
-    - [R 2 [1;0]]
-    - [R 1 [1;2;1;0]]
-    - [R 6 [3;2;1;0]]  *)
+      c1: R 0 []
+      c2: R n l -> R (S n) (n :: l)
+      c3: R (S n) l -> R n l
+
+    - [R 2 [1;0]] -> R 1 [0] -> R 0 [] -> c1
+    - [R 1 [1;2;1;0]] -> R 2 [1;2;1;0] -> R 1 [2;1;0] ->
+                         R 2 [2;1;0] -> R 3 [2;1;0] ->
+                         R 2 [1;0] -> R 1 [0] -> c1 
+    - [R 6 [3;2;1;0]] : not provable, since there's no way to
+                        decrement 6 so it becomes 4.
+    *)
 
 (* FILL IN HERE
 
     [] *)
+
+Module TestingR.
+Inductive R : nat -> list nat -> Prop :=
+      | c1                    : R 0     []
+      | c2 n l (H: R n     l) : R (S n) (n :: l)
+      | c3 n l (H: R (S n) l) : R n     l.
+
+Example R1: R 1 [1;2;1;0].
+Proof.
+  apply c3. apply c2. apply c3. apply c3. apply c2.
+  apply c2. apply c2. apply c1.
+Qed.
+End TestingR.
 
 (* ################################################################# *)
 (** * A Digression on Notation *)
