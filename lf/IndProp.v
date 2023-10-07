@@ -1504,13 +1504,23 @@ Qed.
 Lemma empty_is_empty : forall T (s : list T),
   ~ (s =~ EmptySet).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T.
+  intros s.
+  unfold not.
+  intros H.
+  inversion H.
+Qed.
 
 Lemma MUnion' : forall T (s : list T) (re1 re2 : reg_exp T),
   s =~ re1 \/ s =~ re2 ->
   s =~ Union re1 re2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s.
+  intros .
+  destruct H.
+    - apply MUnionL. apply H.
+    - apply MUnionR. apply H.
+Qed.
 
 (** The next lemma is stated in terms of the [fold] function from the
     [Poly] chapter: If [ss : list (list T)] represents a sequence of
@@ -1521,7 +1531,16 @@ Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp T),
   (forall s, In s ss -> s =~ re) ->
   fold app ss [] =~ Star re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T.
+  intros ss re H.
+
+  induction ss.
+    - simpl. apply MStar0.
+    - simpl. apply MStarApp.
+      + apply (H x). simpl. left. reflexivity.
+      + apply IHss. intros s. intros H1. apply H.
+        simpl. right. apply H1.
+Qed.
 (** [] *)
 
 (** Since the definition of [exp_match] has a recursive
@@ -1555,10 +1574,13 @@ Theorem in_re_match : forall T (s : list T) (re : reg_exp T) (x : T),
 Proof.
   intros T s re x Hmatch Hin.
   induction Hmatch
-    as [| x'
-        | s1 re1 s2 re2 Hmatch1 IH1 Hmatch2 IH2
-        | s1 re1 re2 Hmatch IH | re1 s2 re2 Hmatch IH
-        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2].
+    as [(* MEmpty *)
+        | x' (* MChar*)
+        | s1 re1 s2 re2 Hmatch1 IH1 Hmatch2 IH2 (* MApp*)
+        | s1 re1 re2 Hmatch IH (* MUnionL *)
+        | re1 s2 re2 Hmatch IH (* MUnionR *)
+        | re (*MStar0 *)
+        | s1 s2 re Hmatch1 IH1 Hmatch2 IH2]. (* MStarApp *)
   (* WORKED IN CLASS *)
   - (* MEmpty *)
     simpl in Hin. destruct Hin.
@@ -1610,13 +1632,46 @@ Qed.
     regular expression matches some string. Prove that your function
     is correct. *)
 
-Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool :=
+  match re with
+    | EmptySet => false
+    | EmptyStr => true
+    | Char _ => true
+    | App r1 r2 => andb (re_not_empty r1) (re_not_empty r2)
+    | Union r1 r2 => orb (re_not_empty r1) (re_not_empty r2)
+    | Star r => true
+  end.
 
 Lemma re_not_empty_correct : forall T (re : reg_exp T),
   (exists s, s =~ re) <-> re_not_empty re = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T re.
+  split.
+    - intros H. induction re.
+      + simpl. destruct H. inversion H.
+      + simpl. reflexivity.
+      + simpl. reflexivity.
+      + simpl. rewrite andb_true_iff. destruct H as [s H]. inversion H. split.
+        * apply IHre1. exists s1. apply H3.
+        * apply IHre2. exists s2. apply H4.
+      + simpl. rewrite orb_true_iff. destruct H as [s H]. inversion H.
+        * left. apply IHre1. exists s. apply H2.
+        * right. apply IHre2. exists s. apply H1.
+      + simpl. reflexivity.
+    - intros H. induction re.
+      + inversion H.
+      + exists []. apply MEmpty.
+      + exists [t]. apply MChar.
+      + inversion H. apply andb_true_iff in H1. destruct H1. destruct IHre1. apply H0.
+        destruct IHre2. apply H1. exists (x ++ x0). apply MApp.
+          * apply H2.
+          * apply H3.
+      + inversion H. apply orb_true_iff in H1. destruct H1.
+        * destruct IHre1. apply H0. exists x. apply MUnionL. apply H1.
+        * destruct IHre2. apply H0. exists x. apply MUnionR. apply H1.
+      + exists []. apply MStar0. 
+Qed.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -1634,6 +1689,10 @@ Lemma star_app: forall T (s1 s2 : list T) (re : reg_exp T),
   s1 ++ s2 =~ Star re.
 Proof.
   intros T s1 s2 re H1.
+
+  (* induction H1.
+    - intros . simpl. apply H.
+    - intros .  *)
 
 (** Now, just doing an [inversion] on [H1] won't get us very far in
     the recursive cases. (Try it!). So we need induction (on
@@ -1673,7 +1732,8 @@ Abort.
 
 (** The problem here is that [induction] over a Prop hypothesis
     only works properly with hypotheses that are "completely
-    general," i.e., ones in which all the arguments are variables,
+    general," i.e., ones in which all the arguments are 
+    (SK: universally quantified) variables,
     as opposed to more complex expressions like [Star re].
 
     (In this respect, [induction] on evidence behaves more like
@@ -1757,7 +1817,20 @@ Lemma MStar'' : forall T (s : list T) (re : reg_exp T),
     s = fold app ss []
     /\ forall s', In s' ss -> s' =~ re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s. intros re. intros H. remember (Star re) as s'.
+  generalize dependent s.
+  induction s'.
+    - discriminate.
+    - discriminate.
+    - discriminate.
+    - intros . discriminate.
+    - discriminate.
+    - 
+  
+
+  intros T s. intros re. intros H. exists [s]. split.
+    - simpl. rewrite app_nil_r. reflexivity.
+    - 
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced (weak_pumping)
