@@ -1232,7 +1232,7 @@ Proof.
     - intros . inversion H.
       + apply ss2. apply IHsubseq. apply H3.
       +  apply ss3. apply IHsubseq. apply H3.
-Qed. (* HELP - solved it but why dos `induction H0` work here? *)
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (R_provability2)
@@ -1811,26 +1811,53 @@ Qed.
     [MStar'] exercise above), shows that our definition of [exp_match]
     for [Star] is equivalent to the informal one given previously. *)
 
+
 Lemma MStar'' : forall T (s : list T) (re : reg_exp T),
   s =~ Star re ->
   exists ss : list (list T),
     s = fold app ss []
     /\ forall s', In s' ss -> s' =~ re.
 Proof.
-  intros T s. intros re. intros H. remember (Star re) as s'.
-  generalize dependent s.
-  induction s'.
-    - discriminate.
-    - discriminate.
-    - discriminate.
+  intros T s re. intros H. remember (Star re) as re'.
+  generalize dependent re.
+  induction H.
     - intros . discriminate.
-    - discriminate.
-    - 
-  
+    - intros . discriminate.
+    - intros . discriminate.
+    - intros . discriminate.
+    - intros . discriminate.
+    - intros . exists []. simpl. split.
+      + reflexivity.
+      + intros. destruct H.
+    - intros . exists [s1;s2]. split. simpl. rewrite app_nil_r. reflexivity.
+      intros . destruct re.
+        + inversion H.
+        + inversion H. inversion H1.
+          * injection Heqre' as H4. rewrite <- H4 in *. rewrite H3 in *. apply H.
+          * inversion H3.
+            ** inversion H0.
+              *** rewrite H4 in *.  injection Heqre' as H6. rewrite <- H5. rewrite <- H6. apply MEmpty.
+              *** injection Heqre' as H9. rewrite <- H9. rewrite <- H4.
 
-  intros T s. intros re. intros H. exists [s]. split.
-    - simpl. rewrite app_nil_r. reflexivity.
-    - 
+
+  intros T s. intros re. intros H. remember (Star re) as re'.
+  induction H.
+    - discriminate. (* MEmpty *)
+    - discriminate. (* MChar *)
+    - discriminate. (* MApp *)
+    - discriminate. (* MUnionL *)
+    - discriminate. (* MUnionR *)
+    - (* MStar0 *) exists []. simpl. split.
+      + reflexivity.
+      + intros . destruct H.
+    - (* MStarApp *) exists [s1;s2]. simpl. split. rewrite app_nil_r. reflexivity.
+      intros . injection Heqre' as H'. destruct H1.
+        + rewrite H' in H. rewrite H1 in H. apply H.
+        + destruct H1.
+          * destruct re.
+            ** 
+
+  
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced (weak_pumping)
