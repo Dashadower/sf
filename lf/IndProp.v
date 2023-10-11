@@ -1829,34 +1829,12 @@ Proof.
     - intros . exists []. simpl. split.
       + reflexivity.
       + intros. destruct H.
-    - intros . exists [s1;s2]. split. simpl. rewrite app_nil_r. reflexivity.
-      intros . destruct re.
-        + inversion H.
-        + inversion H. inversion H1.
-          * injection Heqre' as H4. rewrite <- H4 in *. rewrite H3 in *. apply H.
-          * inversion H3.
-            ** inversion H0.
-              *** rewrite H4 in *.  injection Heqre' as H6. rewrite <- H5. rewrite <- H6. apply MEmpty.
-              *** injection Heqre' as H9. rewrite <- H9. rewrite <- H4.
-
-
-  intros T s. intros re. intros H. remember (Star re) as re'.
-  induction H.
-    - discriminate. (* MEmpty *)
-    - discriminate. (* MChar *)
-    - discriminate. (* MApp *)
-    - discriminate. (* MUnionL *)
-    - discriminate. (* MUnionR *)
-    - (* MStar0 *) exists []. simpl. split.
-      + reflexivity.
-      + intros . destruct H.
-    - (* MStarApp *) exists [s1;s2]. simpl. split. rewrite app_nil_r. reflexivity.
-      intros . injection Heqre' as H'. destruct H1.
-        + rewrite H' in H. rewrite H1 in H. apply H.
-        + destruct H1.
-          * destruct re.
-            ** 
-
+    - intros . destruct (IHexp_match2 re0). apply Heqre'. destruct H1.
+      exists ([s1]++x). split. simpl. rewrite <- H1. reflexivity. intros .
+      inversion H3.
+        + injection Heqre' as H5. rewrite H4 in H. rewrite H5 in H. apply H.
+        + simpl in H4. apply H2. apply H4.
+Qed.
   
 (** [] *)
 
@@ -1990,7 +1968,19 @@ Proof.
        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2 ].
   - (* MEmpty *)
     simpl. intros contra. inversion contra.
-  (* FILL IN HERE *) Admitted.
+    (* START OF MY PROOF - DONT DELETE ABOVE THIS LINE *)
+  - (* MChar *)
+    simpl. intros . apply Sn_le_Sm__n_le_m in H. inversion H.
+  - (* MApp *)
+    simpl in *. intros . remember (s1 ++ s2) as sapp. induction s2.
+      + simpl in *. rewrite app_nil_r in *. apply plus_le in H. destruct H.
+        rewrite <- app_nil_r in Heqsapp.
+        rewrite Heqsapp in H. rewrite app_nil_r in H. 
+        apply IH1 in H. destruct H as (s2 & s3 & s4 & H).
+        destruct H as [H  [H1 H2]].
+        exists s2. exists s3. exists s4. split.
+          * apply H.
+          * split. apply H1. intros m. apply MApp.
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (pumping)
