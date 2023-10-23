@@ -881,7 +881,7 @@ Proof.
     - intros b. simpl. apply n_le_m__Sn_le_Sm. apply IHa.
 Qed.
 
-Theorem plus_le : forall n1 n2 m,  (* HELP This one is a pain.. *)
+Theorem plus_le : forall n1 n2 m,
   n1 + n2 <= m ->
   n1 <= m /\ n2 <= m.
 Proof.
@@ -1529,7 +1529,7 @@ Qed.
 
 Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp T),
   (forall s, In s ss -> s =~ re) ->
-  fold app ss [] =~ Star re.
+  fold app ss [] =~ Star re. (* HELP: How is this true??? ss 'partially' matches re (the s substring) *)
 Proof.
   intros T.
   intros ss re H.
@@ -1949,6 +1949,12 @@ Qed.
     a (constructive!) way to generate strings matching [re] that are
     as long as we like. *)
 
+Lemma app_nil_l: forall T (l : list T),
+  [] ++ l = l.
+Proof.
+  intros. simpl. reflexivity.
+Qed.
+
 Lemma weak_pumping : forall T (re : reg_exp T) s,
   s =~ re ->
   pumping_constant re <= length s ->
@@ -1972,15 +1978,44 @@ Proof.
   - (* MChar *)
     simpl. intros . apply Sn_le_Sm__n_le_m in H. inversion H.
   - (* MApp *)
-    simpl in *. intros . remember (s1 ++ s2) as sapp. induction s2.
-      + simpl in *. rewrite app_nil_r in *. apply plus_le in H. destruct H.
-        rewrite <- app_nil_r in Heqsapp.
-        rewrite Heqsapp in H. rewrite app_nil_r in H. 
-        apply IH1 in H. destruct H as (s2 & s3 & s4 & H).
-        destruct H as [H  [H1 H2]].
-        exists s2. exists s3. exists s4. split.
-          * apply H.
-          * split. apply H1. intros m. apply MApp.
+    simpl in *. intros . (* remember (s1 ++ s2) as sapp. *) apply plus_le in H. destruct H.
+    rewrite app_length in H. induction s1 as [| hs1 s1' IHs1].
+      + simpl in *. apply IH2 in H0. destruct H0 as (s1 & s3 & s4 & [H0 [H1 H2]]).
+        exists s1. exists s3. exists s4. split. apply H0. split. apply H1. intros m.
+        rewrite <- (app_nil_l T (s1 ++ napp m s3 ++ s4)). apply MApp. apply Hmatch1. apply H2.
+      + simpl in *. destruct s2 eqn:Eqs2.
+        * simpl in *. rewrite app_nil_r in *. rewrite add_0_r in *. apply IH1 in H.
+          destruct H as (s4 & s5 & s6 & [H1 [H2 H3]]). exists s4. exists s5. exists s6.
+          split. apply H1. split. apply H2. intros m. rewrite <- (app_nil_r T _). apply MApp.
+          apply H3. apply Hmatch2.
+        * simpl in *.
+  - (* MUnionL *)
+    simpl in *. intros . apply plus_le in H. destruct H. apply IH in H.
+    destruct H as (s2 & s3 & s5 & H). exists s2. exists s3. exists s5.
+    destruct H as [H [H1 H2]]. 
+    split.
+      + apply H.
+      + split. apply H1. intros m. apply MUnionL. apply H2.
+  - (* MUnionR *)
+    simpl in *. intros . apply plus_le in H. destruct H. apply IH in H0.
+    destruct H0 as (s1 & s3 & s5 & H0). exists s1. exists s3. exists s5.
+    destruct H0 as [H0 [H1 H2]].
+    split.
+      + apply H0.
+      + split. apply H1. intros m. apply MUnionR. apply H2.
+  - (* MStar0 *)
+    simpl in *. intros . inversion H. apply pumping_constant_0_false in H1.
+    destruct H1.
+  - (* MStarApp *)
+    simpl in *. intros . rewrite app_length in H. induction s1 as [| hs1 s1' IHs1].
+      + simpl in *. apply IH2 in H. destruct H as (s1 & s3 & s4 & [H1 [H2 H3]]).
+        exists s1. exists s3. exists s4. split. apply H1. split. apply H2. intros m. apply H3.
+      + simpl in *.
+
+      + simpl in *. induction s2 as [| hs2 s2' IHs2].
+        * simpl in *. rewrite app_nil_r in *. rewrite add_0_r in *. apply IH1 in H.
+          destruct H as (s1 & s2 & s3 & [H1 [H2 H3]]). exists s1. exists s2. exists s3.
+          split. apply H1. split. apply H2. intros m. apply (napp_star _ m _ []) in Hmatch1.
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (pumping)
