@@ -1978,6 +1978,20 @@ Proof.
   - (* MChar *)
     simpl. intros . apply Sn_le_Sm__n_le_m in H. inversion H.
   - (* MApp *)
+    simpl in *. intros . apply plus_le in H. destruct H. induction s1 as [| hs1 s1' IHs1].
+      + simpl in *. apply IH2 in H0. destruct H0 as (s1 & s3 & s4 & [H0 [H1 H2]]).
+        exists s1. exists s3. exists s4. split. apply H0. split. apply H1. intros m.
+        rewrite <- (app_nil_l T (s1 ++ napp m s3 ++ s4)). apply MApp. apply Hmatch1. apply H2.
+      + simpl in *. induction s2 as [| hs2 s2' IHs2].
+        * simpl in *. rewrite app_nil_r in *. apply IH1 in H.
+          destruct H as (s4 & s5 & s6 & [H1 [H2 H3]]). exists s4. exists s5. exists s6.
+          split. apply H1. split. apply H2. intros m. rewrite <- (app_nil_r T _). apply MApp.
+          apply H3. apply Hmatch2.
+        * exists []. exists (hs1 :: s1'). exists (hs2 :: s2'). split. simpl. reflexivity.
+          split. discriminate. intros m. simpl. apply MApp.
+            ** 
+            ** apply Hmatch2.
+    
     simpl in *. intros . (* remember (s1 ++ s2) as sapp. *) apply plus_le in H. destruct H.
     rewrite app_length in H. induction s1 as [| hs1 s1' IHs1].
       + simpl in *. apply IH2 in H0. destruct H0 as (s1 & s3 & s4 & [H0 [H1 H2]]).
