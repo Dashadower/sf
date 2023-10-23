@@ -1988,7 +1988,9 @@ Proof.
           destruct H as (s4 & s5 & s6 & [H1 [H2 H3]]). exists s4. exists s5. exists s6.
           split. apply H1. split. apply H2. intros m. rewrite <- (app_nil_r T _). apply MApp.
           apply H3. apply Hmatch2.
-        * simpl in *.
+        * simpl in *. apply (MApp (hs1::s1') re1 (x :: l) re2) in Hmatch1 as MA1.
+          exists []. exists (hs1 :: s1'). exists (x :: l). simpl in *. split. reflexivity. split.
+          discriminate. intros m. apply MApp. admit. apply Hmatch2. apply Hmatch2.
   - (* MUnionL *)
     simpl in *. intros . apply plus_le in H. destruct H. apply IH in H.
     destruct H as (s2 & s3 & s5 & H). exists s2. exists s3. exists s5.
@@ -2007,15 +2009,18 @@ Proof.
     simpl in *. intros . inversion H. apply pumping_constant_0_false in H1.
     destruct H1.
   - (* MStarApp *)
-    simpl in *. intros . rewrite app_length in H. induction s1 as [| hs1 s1' IHs1].
-      + simpl in *. apply IH2 in H. destruct H as (s1 & s3 & s4 & [H1 [H2 H3]]).
-        exists s1. exists s3. exists s4. split. apply H1. split. apply H2. intros m. apply H3.
-      + simpl in *.
+    simpl in *. intros . destruct s2.
+      + simpl in *. rewrite app_nil_r in *. apply IH1 in H. destruct H as (s2 & s3 & s4 & [H1 [H2 H3]]).
+        exists s2. exists s3. exists s4. split. apply H1. split. apply H2. intros m. 
+        rewrite <- (app_nil_r T (s2 ++ napp m s3 ++ s4)). apply MStarApp. apply H3. apply Hmatch2.
+      (* + exists []. exists s1. exists (x :: s2). split. simpl. reflexivity. split.  *)
+      + destruct s1.
+        * simpl in *. apply IH2 in H. destruct H as (s1 & s3 & s4 & [H1 [H2 H3]]).
+          exists s1. exists s3. exists s4. split. apply H1. split. apply H2. apply H3.
+        * exists []. exists (x0 :: s1). exists (x :: s2). split. simpl. reflexivity. split.
+          discriminate. simpl. intros m. apply napp_star. apply Hmatch1. apply Hmatch2.
 
-      + simpl in *. induction s2 as [| hs2 s2' IHs2].
-        * simpl in *. rewrite app_nil_r in *. rewrite add_0_r in *. apply IH1 in H.
-          destruct H as (s1 & s2 & s3 & [H1 [H2 H3]]). exists s1. exists s2. exists s3.
-          split. apply H1. split. apply H2. intros m. apply (napp_star _ m _ []) in Hmatch1.
+
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (pumping)
