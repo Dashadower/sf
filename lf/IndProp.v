@@ -1955,6 +1955,16 @@ Proof.
   intros. simpl. reflexivity.
 Qed.
 
+Lemma app_nil_nil: forall T (l m : list T),
+  l ++ m = [] -> l = [] /\ m = [].
+Proof.
+  intros T. intros l m.
+  generalize dependent l.
+  induction l.
+    - intros . simpl in *. split. reflexivity. apply H.
+    - intros . simpl in *. inversion H.
+Qed.
+
 Lemma weak_pumping : forall T (re : reg_exp T) s,
   s =~ re ->
   pumping_constant re <= length s ->
@@ -1978,33 +1988,18 @@ Proof.
   - (* MChar *)
     simpl. intros . apply Sn_le_Sm__n_le_m in H. inversion H.
   - (* MApp *)
-    simpl in *. intros . apply plus_le in H. destruct H. induction s1 as [| hs1 s1' IHs1].
-      + simpl in *. apply IH2 in H0. destruct H0 as (s1 & s3 & s4 & [H0 [H1 H2]]).
-        exists s1. exists s3. exists s4. split. apply H0. split. apply H1. intros m.
-        rewrite <- (app_nil_l T (s1 ++ napp m s3 ++ s4)). apply MApp. apply Hmatch1. apply H2.
-      + simpl in *. induction s2 as [| hs2 s2' IHs2].
-        * simpl in *. rewrite app_nil_r in *. apply IH1 in H.
-          destruct H as (s4 & s5 & s6 & [H1 [H2 H3]]). exists s4. exists s5. exists s6.
-          split. apply H1. split. apply H2. intros m. rewrite <- (app_nil_r T _). apply MApp.
-          apply H3. apply Hmatch2.
-        * exists []. exists (hs1 :: s1'). exists (hs2 :: s2'). split. simpl. reflexivity.
-          split. discriminate. intros m. simpl. apply MApp.
-            ** 
-            ** apply Hmatch2.
-    
-    simpl in *. intros . (* remember (s1 ++ s2) as sapp. *) apply plus_le in H. destruct H.
-    rewrite app_length in H. induction s1 as [| hs1 s1' IHs1].
-      + simpl in *. apply IH2 in H0. destruct H0 as (s1 & s3 & s4 & [H0 [H1 H2]]).
-        exists s1. exists s3. exists s4. split. apply H0. split. apply H1. intros m.
-        rewrite <- (app_nil_l T (s1 ++ napp m s3 ++ s4)). apply MApp. apply Hmatch1. apply H2.
-      + simpl in *. destruct s2 eqn:Eqs2.
-        * simpl in *. rewrite app_nil_r in *. rewrite add_0_r in *. apply IH1 in H.
-          destruct H as (s4 & s5 & s6 & [H1 [H2 H3]]). exists s4. exists s5. exists s6.
-          split. apply H1. split. apply H2. intros m. rewrite <- (app_nil_r T _). apply MApp.
-          apply H3. apply Hmatch2.
-        * simpl in *. apply (MApp (hs1::s1') re1 (x :: l) re2) in Hmatch1 as MA1.
-          exists []. exists (hs1 :: s1'). exists (x :: l). simpl in *. split. reflexivity. split.
-          discriminate. intros m. apply MApp. admit. apply Hmatch2. apply Hmatch2.
+    simpl in *. intros . rewrite app_length in H. apply add_le_cases in H.
+    destruct H.
+      + apply IH1 in H as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 H3]]).
+        exists s5. exists s6. exists (s7 ++ s2). split. rewrite H1.
+        replace ((s5 ++ s6 ++ s7) ++ s2) with (s5 ++ s6 ++ s7 ++ s2). reflexivity.
+        rewrite <- (app_assoc _ s5 (s6 ++ s7) s2). rewrite <- (app_assoc _ s6 s7 s2). reflexivity.
+        split. apply H2. intros m.
+        replace (s5 ++ napp m s6 ++ s7 ++ s2) with ((s5 ++ napp m s6 ++ s7) ++ s2). apply MApp.
+        apply H3. apply Hmatch2. rewrite <- app_assoc. rewrite <- app_assoc. reflexivity.
+      + apply IH2 in H as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 H3]]).
+        exists (s1 ++ s5). exists s6. exists s7. split. rewrite H1. rewrite <- app_assoc. reflexivity.
+        split. apply H2. intros m. rewrite <- app_assoc. apply MApp. apply Hmatch1. apply H3.
   - (* MUnionL *)
     simpl in *. intros . apply plus_le in H. destruct H. apply IH in H.
     destruct H as (s2 & s3 & s5 & H). exists s2. exists s3. exists s5.
@@ -2033,7 +2028,7 @@ Proof.
           exists s1. exists s3. exists s4. split. apply H1. split. apply H2. apply H3.
         * exists []. exists (x0 :: s1). exists (x :: s2). split. simpl. reflexivity. split.
           discriminate. simpl. intros m. apply napp_star. apply Hmatch1. apply Hmatch2.
-
+Qed.
 
 (** [] *)
 
@@ -2061,7 +2056,51 @@ Proof.
        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2 ].
   - (* MEmpty *)
     simpl. intros contra. inversion contra.
-  (* FILL IN HERE *) Admitted.
+    (* START OF MY PROOF - DONT DELETE ABOVE THIS LINE *)
+  - (* MChar *)
+    simpl. intros . apply Sn_le_Sm__n_le_m in H. inversion H.
+  - (* MApp *)
+    simpl in *. intros . rewrite app_length in H. apply add_le_cases in H.
+    destruct H.
+      + apply IH1 in H as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 H3]]).
+        exists s5. exists s6. exists (s7 ++ s2). split. rewrite H1.
+        replace ((s5 ++ s6 ++ s7) ++ s2) with (s5 ++ s6 ++ s7 ++ s2). reflexivity.
+        rewrite <- (app_assoc _ s5 (s6 ++ s7) s2). rewrite <- (app_assoc _ s6 s7 s2). reflexivity.
+        split. apply H2. intros m.
+        replace (s5 ++ napp m s6 ++ s7 ++ s2) with ((s5 ++ napp m s6 ++ s7) ++ s2). apply MApp.
+        apply H3. apply Hmatch2. rewrite <- app_assoc. rewrite <- app_assoc. reflexivity.
+      + apply IH2 in H as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 H3]]).
+        exists (s1 ++ s5). exists s6. exists s7. split. rewrite H1. rewrite <- app_assoc. reflexivity.
+        split. apply H2. intros m. rewrite <- app_assoc. apply MApp. apply Hmatch1. apply H3.
+  - (* MUnionL *)
+    simpl in *. intros . apply plus_le in H. destruct H. apply IH in H.
+    destruct H as (s2 & s3 & s5 & H). exists s2. exists s3. exists s5.
+    destruct H as [H [H1 H2]]. 
+    split.
+      + apply H.
+      + split. apply H1. intros m. apply MUnionL. apply H2.
+  - (* MUnionR *)
+    simpl in *. intros . apply plus_le in H. destruct H. apply IH in H0.
+    destruct H0 as (s1 & s3 & s5 & H0). exists s1. exists s3. exists s5.
+    destruct H0 as [H0 [H1 H2]].
+    split.
+      + apply H0.
+      + split. apply H1. intros m. apply MUnionR. apply H2.
+  - (* MStar0 *)
+    simpl in *. intros . inversion H. apply pumping_constant_0_false in H1.
+    destruct H1.
+  - (* MStarApp *)
+    simpl in *. intros . destruct s2.
+      + simpl in *. rewrite app_nil_r in *. apply IH1 in H. destruct H as (s2 & s3 & s4 & [H1 [H2 H3]]).
+        exists s2. exists s3. exists s4. split. apply H1. split. apply H2. intros m. 
+        rewrite <- (app_nil_r T (s2 ++ napp m s3 ++ s4)). apply MStarApp. apply H3. apply Hmatch2.
+      (* + exists []. exists s1. exists (x :: s2). split. simpl. reflexivity. split.  *)
+      + destruct s1.
+        * simpl in *. apply IH2 in H. destruct H as (s1 & s3 & s4 & [H1 [H2 H3]]).
+          exists s1. exists s3. exists s4. split. apply H1. split. apply H2. apply H3.
+        * exists []. exists (x0 :: s1). exists (x :: s2). split. simpl. reflexivity. split.
+          discriminate. simpl. intros m. apply napp_star. apply Hmatch1. apply Hmatch2.
+Qed.
 
 End Pumping.
 (** [] *)
