@@ -2161,7 +2161,6 @@ Proof.
             ** unfold gt in H. unfold lt in H. apply le_S in H. apply Sn_le_Sm__n_le_m in H. apply H.
             ** apply H3.
             ** intros m. rewrite <- app_assoc. apply MApp. apply Hmatch1. apply H4.
-
   - (* MUnionL *)
     simpl in *. intros . apply plus_le in H. destruct H. apply IH in H.
     destruct H as (s2 & s3 & s5 & H). exists s2. exists s3. exists s5.
@@ -2195,16 +2194,12 @@ Proof.
           apply MStarApp. apply H4. apply Hmatch2. rewrite <- app_assoc. rewrite <- app_assoc. reflexivity.
         * apply leb_false_complete in Eqrefl. unfold gt in Eqrefl. unfold lt in Eqrefl.
           destruct s1.
-            {
-              simpl in *. apply IH2 in H. destruct H as (s5 & s6 & s7 & [H1 [H2 [H3 H4]]]).
-              exists s5. exists s6. exists s7. split. rewrite H1. reflexivity. split. apply H2. split. apply H3.
-              intros m. apply H4.
-            }
-            {
-              simpl in Eqrefl. exists []. exists (x0 :: s1). exists (x::s2). split. simpl. reflexivity. split.
-              unfold not. intros. discriminate H0. simpl. split. apply le_S in Eqrefl. apply Sn_le_Sm__n_le_m in Eqrefl.
-              apply Eqrefl. intros m. apply napp_star. apply Hmatch1. apply Hmatch2.
-            }
+            ** simpl in *. apply IH2 in H. destruct H as (s5 & s6 & s7 & [H1 [H2 [H3 H4]]]).
+               exists s5. exists s6. exists s7. split. rewrite H1. reflexivity. split. apply H2. split. apply H3.
+               intros m. apply H4.
+            ** simpl in Eqrefl. exists []. exists (x0 :: s1). exists (x::s2). split. simpl. reflexivity. split.
+               unfold not. intros. discriminate H0. simpl. split. apply le_S in Eqrefl. apply Sn_le_Sm__n_le_m in Eqrefl.
+               apply Eqrefl. intros m. apply napp_star. apply Hmatch1. apply Hmatch2.
 Qed.
 
 End Pumping.
