@@ -2099,6 +2099,19 @@ Proof.
         *apply Sn_le_Sm__n_le_m in H0. apply H0.
 Qed.
 
+
+Lemma leb_false_complete : forall (n m : nat),
+  (n <=? m) = false -> n > m.
+Proof.
+  intros n.
+  induction n.
+    - intros. inversion H.
+    - intros. destruct m.
+      + unfold gt. unfold lt. apply n_le_m__Sn_le_Sm. apply O_le_n.
+      + unfold gt in *. unfold lt in *. apply n_le_m__Sn_le_Sm. apply IHn. simpl in H.
+        apply H.
+Qed.
+
 Lemma pumping : forall T (re : reg_exp T) s,
   s =~ re ->
   pumping_constant re <= length s ->
@@ -2171,17 +2184,27 @@ Proof.
     simpl in *. intros. inversion H. apply pumping_constant_0_false in H1.
     destruct H1.
   - (* MStarApp *)
-    simpl in *. intros. destruct s2.
-      + simpl in *. rewrite app_nil_r in *. apply IH1 in H. destruct H as (s2 & s3 & s4 & [H1 [H2 [H3 H4]]]).
+    simpl in *. intros. rewrite app_length in H. destruct s2.
+      + simpl in *. rewrite app_nil_r in *. rewrite <- plus_n_O in H. apply IH1 in H. destruct H as (s2 & s3 & s4 & [H1 [H2 [H3 H4]]]).
         exists s2. exists s3. exists s4. split. apply H1. split. apply H2. split. apply H3. intros m. 
         rewrite <- (app_nil_r T (s2 ++ napp m s3 ++ s4)). apply MStarApp. apply H4. apply Hmatch2.
-      + destruct s1.
-        * simpl in *. apply IH2 in H. destruct H as (s1 & s3 & s4 & [H1 [H2 [H3 H4]]]).
-          exists s1. exists s3. exists s4. split. apply H1. split. apply H2. split. apply H3. apply H4.
-        * rewrite app_length in H. exists []. exists (x0 :: s1). exists (x :: s2). split. simpl. reflexivity. split.
-          discriminate. split. rewrite app_length in H. (**) admit.
-          
-           simpl. intros m. apply napp_star. apply Hmatch1. apply Hmatch2.
+      + destruct (pumping_constant re <=? length s1) eqn:Eqrefl.
+        * apply leb_complete in Eqrefl. apply IH1 in Eqrefl as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 [H3 H4]]]).
+          exists s5. exists s6. exists (s7 ++ x :: s2). split. rewrite H1. rewrite <- app_assoc. rewrite <- app_assoc. reflexivity.
+          split. apply H2. split. apply H3. intros. replace (s5 ++ napp m s6 ++ s7 ++ x :: s2) with ((s5 ++ napp m s6 ++ s7) ++ x :: s2 ).
+          apply MStarApp. apply H4. apply Hmatch2. rewrite <- app_assoc. rewrite <- app_assoc. reflexivity.
+        * apply leb_false_complete in Eqrefl. unfold gt in Eqrefl. unfold lt in Eqrefl.
+          destruct s1.
+            {
+              simpl in *. apply IH2 in H. destruct H as (s5 & s6 & s7 & [H1 [H2 [H3 H4]]]).
+              exists s5. exists s6. exists s7. split. rewrite H1. reflexivity. split. apply H2. split. apply H3.
+              intros m. apply H4.
+            }
+            {
+              simpl in Eqrefl. exists []. exists (x0 :: s1). exists (x::s2). split. simpl. reflexivity. split.
+              unfold not. intros. discriminate H0. simpl. split. apply le_S in Eqrefl. apply Sn_le_Sm__n_le_m in Eqrefl.
+              apply Eqrefl. intros m. apply napp_star. apply Hmatch1. apply Hmatch2.
+            }
 Qed.
 
 End Pumping.
