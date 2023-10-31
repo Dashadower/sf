@@ -2050,6 +2050,7 @@ Proof.
 Qed.
 
 Lemma plus_le_cases_middle : forall (n m p q : nat),
+  (* This is my lemma that encapsulates LEM for le *)
   n + m <= p + q -> (n <= p /\ m <= q) \/ (n <= p /\ m > q) \/ (n > p /\ m <= q).
 Proof.
   intros n m p.
@@ -2084,6 +2085,19 @@ Proof.
           ** destruct H. right. right. split. unfold gt in *. unfold lt in *. apply n_le_m__Sn_le_Sm. apply H. apply H0.
 Qed.
 
+Lemma add_le_trans : forall (n m p q : nat),
+  n <= m -> p <= q -> n + p <= m + q.
+Proof.
+  intros n m p q.
+  generalize dependent p.
+  induction q.
+    - intros. inversion H0. rewrite <- plus_n_O. rewrite <- plus_n_O. apply H. 
+    - intros. destruct p.
+      + rewrite <- plus_n_O. apply le_any. apply H.
+      + rewrite <- plus_n_Sm. rewrite <- plus_n_Sm. apply n_le_m__Sn_le_Sm. apply IHq.
+        * apply H.
+        *apply Sn_le_Sm__n_le_m in H0. apply H0.
+Qed.
 
 Lemma pumping : forall T (re : reg_exp T) s,
   s =~ re ->
@@ -2107,7 +2121,6 @@ Proof.
   - (* MChar *)
     simpl. intros . apply Sn_le_Sm__n_le_m in H. inversion H.
   - (* MApp *)
-    (* simpl in *. intros . rewrite app_length in H. apply add_le_cases in H. *)
     (*
     1. pumping_constant re1 <= length s1 /\ pumping_constant re2 > length s2
     2. pumping_constant re1 > length s1  /\ pumping_constant re2 <= length s2
@@ -2125,21 +2138,17 @@ Proof.
       + destruct H.
         * destruct H. apply IH1 in H as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 [H3 H4]]]).
           unfold gt in H0. unfold lt in H0. apply le_S in H0. apply Sn_le_Sm__n_le_m in H0.
-          exists s5. exists s6. exists (s7 ++ s2).
+          exists s5. exists s6. exists (s7 ++ s2). split. rewrite H1. rewrite <- (app_assoc _ s5 (s6 ++ s7) s2).
+          rewrite <- (app_assoc _ s6 s7 s2). reflexivity. split. apply H2. split. apply le_plus_trans. apply H3.
+          intros m. replace (s5 ++ napp m s6 ++ s7 ++ s2) with ((s5 ++ napp m s6 ++ s7) ++ s2).
+          apply MApp. apply H4. apply Hmatch2. rewrite <- app_assoc. rewrite <- app_assoc. reflexivity.
+        * destruct H. apply IH2 in H0 as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 [H3 H4]]]).
+          exists (s1 ++ s5). exists s6. exists s7. split. rewrite <- app_assoc. rewrite H1. reflexivity.
+          split. apply H2. split. rewrite app_length. rewrite <- add_assoc. (**) apply add_le_trans.
+            ** unfold gt in H. unfold lt in H. apply le_S in H. apply Sn_le_Sm__n_le_m in H. apply H.
+            ** apply H3.
+            ** intros m. rewrite <- app_assoc. apply MApp. apply Hmatch1. apply H4.
 
-    simpl in *. intros . rewrite app_length in H. apply add_le_cases in H.
-    destruct H.
-      + apply IH1 in H as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 [H3 H4]]]).
-        exists s5. exists s6. exists (s7 ++ s2). split. rewrite H1.
-        replace ((s5 ++ s6 ++ s7) ++ s2) with (s5 ++ s6 ++ s7 ++ s2). reflexivity.
-        rewrite <- (app_assoc _ s5 (s6 ++ s7) s2). rewrite <- (app_assoc _ s6 s7 s2). reflexivity.
-        split. apply H2. split. apply (le_any _ _ (pumping_constant re2)) in H3. apply H3. intros m.
-        replace (s5 ++ napp m s6 ++ s7 ++ s2) with ((s5 ++ napp m s6 ++ s7) ++ s2). apply MApp.
-        apply H4. apply Hmatch2. rewrite <- app_assoc. rewrite <- app_assoc. reflexivity.
-      + apply IH2 in H as H1. destruct H1 as (s5 & s6 & s7 & [H1 [H2 [H3 H4]]]).
-        exists (s1 ++ s5). exists s6. exists s7. split. rewrite H1. rewrite <- app_assoc. reflexivity.
-        split. apply H2. split.  (* *)intros m. rewrite <- app_assoc. apply MApp. apply Hmatch1. apply H3.
-    (* admit. *)
   - (* MUnionL *)
     simpl in *. intros . apply plus_le in H. destruct H. apply IH in H.
     destruct H as (s2 & s3 & s5 & H). exists s2. exists s3. exists s5.
@@ -2159,19 +2168,18 @@ Proof.
             rewrite (add_comm (pumping_constant re1) _). apply H2.
           * intros m. apply MUnionR. apply H3.
   - (* MStar0 *)
-    simpl in *. intros . inversion H. apply pumping_constant_0_false in H1.
+    simpl in *. intros. inversion H. apply pumping_constant_0_false in H1.
     destruct H1.
   - (* MStarApp *)
-    simpl in *. intros . destruct s2.
+    simpl in *. intros. destruct s2.
       + simpl in *. rewrite app_nil_r in *. apply IH1 in H. destruct H as (s2 & s3 & s4 & [H1 [H2 [H3 H4]]]).
         exists s2. exists s3. exists s4. split. apply H1. split. apply H2. split. apply H3. intros m. 
         rewrite <- (app_nil_r T (s2 ++ napp m s3 ++ s4)). apply MStarApp. apply H4. apply Hmatch2.
-      (* + exists []. exists s1. exists (x :: s2). split. simpl. reflexivity. split.  *)
       + destruct s1.
         * simpl in *. apply IH2 in H. destruct H as (s1 & s3 & s4 & [H1 [H2 [H3 H4]]]).
           exists s1. exists s3. exists s4. split. apply H1. split. apply H2. split. apply H3. apply H4.
-        * exists []. exists (x0 :: s1). exists (x :: s2). split. simpl. reflexivity. split.
-          discriminate. split. rewrite app_length in H. apply add_le_cases in H.
+        * rewrite app_length in H. exists []. exists (x0 :: s1). exists (x :: s2). split. simpl. reflexivity. split.
+          discriminate. split. rewrite app_length in H. (**) admit.
           
            simpl. intros m. apply napp_star. apply Hmatch1. apply Hmatch2.
 Qed.
