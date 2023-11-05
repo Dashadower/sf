@@ -2252,6 +2252,8 @@ Inductive reflect (P : Prop) : bool -> Prop :=
   | ReflectT (H :   P) : reflect P true
   | ReflectF (H : ~ P) : reflect P false.
 
+(* Print ReflectF. *)
+
 (** The [reflect] property takes two arguments: a proposition
     [P] and a boolean [b].  It states that the property [P]
     _reflects_ (intuitively, is equivalent to) the boolean [b]: that
@@ -2283,7 +2285,11 @@ Qed.
 (** **** Exercise: 2 stars, standard, especially useful (reflect_iff) *)
 Theorem reflect_iff : forall P b, reflect P b -> (P <-> b = true).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+    - intros. inversion H. reflexivity. unfold not in H1. apply H1 in H0. destruct H0.
+    - intros. rewrite H0 in H. inversion H. apply H1.
+Qed.
 (** [] *)
 
 (** We can think of [reflect] as a kind of variant of the usual "if
@@ -2342,7 +2348,15 @@ Theorem eqbP_practice : forall n l,
   count n l = 0 -> ~(In n l).
 Proof.
   intros n l Hcount. induction l as [| m l' IHl'].
-  (* FILL IN HERE *) Admitted.
+    - unfold not. intros. inversion H.
+    - simpl. destruct (eqbP m n) as [H | H].
+      + unfold not. intros. destruct H0. rewrite H in Hcount. inversion Hcount. rewrite eqb_refl in H2. discriminate H2.
+        rewrite H in Hcount. simpl in Hcount. rewrite eqb_refl in Hcount. inversion Hcount.
+      + unfold not. intros. inversion Hcount. destruct (n =? m).
+        * inversion H2. 
+        * simpl in *. destruct H0. unfold not in H. apply H in H0. destruct H0. apply IHl' in H2. unfold not in H2.
+          apply H2 in H0. apply H0.
+Qed.
 (** [] *)
 
 (** This small example shows reflection giving us a small gain in
@@ -2375,7 +2389,10 @@ Proof.
     [nostutter]. *)
 
 Inductive nostutter {X:Type} : list X -> Prop :=
- (* FILL IN HERE *)
+  | nostutter_nil : nostutter []
+  (* | nostutter_nats : forall n m : X, n <> m -> nostutter (n :: [m]) *)
+  | nostutter_t (l : list X) : forall n m : X, n <> m -> nostutter (m :: l) -> nostutter (n :: m :: l)
+  | nostutter_one: forall n: X, nostutter (n :: [])
 .
 (** Make sure each of these tests succeeds, but feel free to change
     the suggested proof (in comments) if the given one doesn't work
@@ -2388,34 +2405,47 @@ Inductive nostutter {X:Type} : list X -> Prop :=
     example with more basic tactics.)  *)
 
 Example test_nostutter_1: nostutter [3;1;4;1;5;6].
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; apply eqb_neq; auto.
-  Qed.
-*)
+(* Proof.
+  apply nostutter_t. apply eqb_neq. simpl. reflexivity.
+  apply nostutter_t. apply eqb_neq. simpl. reflexivity.
+  apply nostutter_t. apply eqb_neq. simpl. reflexivity.
+  apply nostutter_t. apply eqb_neq. simpl. reflexivity.
+  apply nostutter_t. apply eqb_neq. simpl. reflexivity.
+  apply nostutter_one.
+Qed. *)
+
+Proof. repeat constructor; apply eqb_neq; auto.
+Qed.
+
 
 Example test_nostutter_2:  nostutter (@nil nat).
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; apply eqb_neq; auto.
-  Qed.
-*)
+(* Proof.
+  apply nostutter_nil.
+Qed. *)
+
+Proof. repeat constructor; apply eqb_neq; auto.
+Qed.
+
 
 Example test_nostutter_3:  nostutter [5].
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; auto. Qed.
-*)
+Proof.
+  (* apply nostutter_one. *)
+
+Proof. repeat constructor; auto. Qed.
+
 
 Example test_nostutter_4:      not (nostutter [3;1;1;4]).
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. intro.
-  repeat match goal with
-    h: nostutter _ |- _ => inversion h; clear h; subst
-  end.
-  contradiction; auto. Qed.
-*)
+(* Proof.
+  intro.
+  inversion H. inversion H4. unfold not in H7. apply H7. reflexivity.
+Qed. *)
+
+Proof. intro.
+repeat match goal with
+  h: nostutter _ |- _ => inversion h; clear h; subst
+end.
+contradiction; auto. Qed.
+
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_nostutter : option (nat*string) := None.
