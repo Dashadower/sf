@@ -2481,7 +2481,9 @@ Definition manual_grade_for_nostutter : option (nat*string) := None.
     others.  Do this with an inductive relation, not a [Fixpoint].  *)
 
 Inductive merge {X:Type} : list X -> list X -> list X -> Prop :=
-(* FILL IN HERE *)
+  | merge_nil : merge [] [] []
+  | merge_l (l1 l2 l : list X) : forall (x : X), merge l1 l2 l -> merge (x :: l1) l2 (x :: l)
+  | merge_r (l1 l2 l : list X) : forall (x : X), merge l1 l2 l -> merge l1 (x :: l2) (x :: l)
 .
 
 Theorem merge_filter : forall (X : Set) (test: X->bool) (l l1 l2 : list X),
@@ -2490,9 +2492,26 @@ Theorem merge_filter : forall (X : Set) (test: X->bool) (l l1 l2 : list X),
   All (fun n => test n = false) l2 ->
   filter test l = l1.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-(* FILL IN HERE *)
+  intros X.
+  intros testfunc.
+  intros l.
+  induction l.
+    - simpl. intros. inversion H. reflexivity.
+    - intros. simpl in *. inversion H.
+      + (* x :: l1 *) apply IHl in H5.
+        * (* IHl final consequent *)
+          destruct (testfunc x) eqn:Eqtx.
+            ** rewrite H5. reflexivity.
+            **  rewrite <- H3 in H0. rewrite H2 in H0. simpl in H0. destruct H0. 
+                rewrite H0 in Eqtx. discriminate Eqtx.
+        * rewrite <- H3 in H0. simpl in H0. destruct H0. apply H7.
+        * apply H1.
+      + rewrite <- H4 in H1. simpl in H1. destruct H1. rewrite H2 in H1. rewrite H1.
+        apply IHl in H5.
+          * (* IHl final consequent *) apply H5.
+          * apply H0.
+          * apply H7.
+Qed.
 
 (** [] *)
 
@@ -2502,6 +2521,70 @@ Proof.
     this: Among all subsequences of [l] with the property that [test]
     evaluates to [true] on all their members, [filter test l] is the
     longest.  Formalize this claim and prove it. *)
+
+(* I restricted the type of the lists to nat so it's compatible with the version of 
+   subseq that was defined above, but this is trivially generalizable to X *)
+
+Lemma le_Sn_le_stt : forall (n m : nat),
+  S n <= m -> n <= m.
+Proof.
+  intros.
+  generalize dependent n.
+  induction m.
+    - intros. inversion H.
+    - intros. apply Sn_le_Sm__n_le_m in H. apply le_S in H. apply H.
+Qed.
+
+Lemma subseq_len_le_nat : forall (ls l : list nat),
+  subseq ls l -> length ls <= length l.
+Proof.
+  intros.
+  induction H.
+    - apply le_n.
+    - simpl. apply le_S. apply IHsubseq.
+    - simpl. apply n_le_m__Sn_le_Sm. apply IHsubseq.
+Qed.
+
+Lemma filter_le_l : forall (X : Type) (l l2 : list X) (test : X -> bool),
+  length l2 <= length (filter test l) -> length l2 <= length l.
+Proof.
+  intros X.
+  intros l l2 test.
+  generalize dependent l2.
+  induction l.
+    - simpl. intros. apply H.
+    - destruct l2. 
+        + intros. simpl in *. apply O_le_n.
+        + intros. simpl in *. apply n_le_m__Sn_le_Sm. apply IHl.
+          destruct (test x) eqn:Eqtx.
+            * simpl in H. apply Sn_le_Sm__n_le_m in H. apply H.
+            * apply le_Sn_le_stt in H. apply H.
+Qed.
+
+
+Theorem filter_challenge_2 : forall (l ls : list nat) (test : nat -> bool),
+  subseq ls l -> All (fun n => test n = true) ls -> length (filter test l) >= length ls.
+Proof.
+  intros.
+  generalize dependent l.
+  induction ls.
+    - intros. simpl in *. unfold ge. apply O_le_n.
+    - intros. simpl in *. destruct H0. unfold ge in *. apply subseq_len_le_nat in H as H2.
+      assert ( S (length ls) <= length (filter test l) -> S (length ls) <= length l). {
+        intros. simpl in H2. apply H2.
+      }
+      
+
+  generalize dependent ls.
+  induction l.
+    - intros. inversion H. simpl. unfold ge. apply le_n.
+    - intros. destruct ls.
+      + unfold ge. simpl. apply O_le_n.
+      + unfold ge in *. simpl in *. destruct H0. destruct (test x) eqn:Eqtx.
+        * simpl. apply n_le_m__Sn_le_Sm. apply IHl.
+    
+    - intros. unfold ge in *. destruct (test x) eqn:Eqtx.
+      + simpl in *. rewrite Eqtx. simpl. apply le_S. apply IHl.
 
 (* FILL IN HERE
 
