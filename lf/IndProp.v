@@ -1175,25 +1175,25 @@ End R.
       is a subsequence of [l3], then [l1] is a subsequence of [l3]. *)
 
 Inductive subseq : list nat -> list nat -> Prop :=
-  | ss1: subseq [] []
-  | ss2 (l1 l2: list nat): forall (n: nat), subseq l1 l2 -> subseq l1 (n :: l2)
-  | ss3 (l1 l2: list nat): forall (n: nat), subseq l1 l2 -> subseq (n :: l1) (n :: l2)
+  | subseq_nil: subseq [] []
+  | subseq_head_r (l1 l2: list nat): forall (n: nat), subseq l1 l2 -> subseq l1 (n :: l2)
+  | subseq_head (l1 l2: list nat): forall (n: nat), subseq l1 l2 -> subseq (n :: l1) (n :: l2)
 .
 
 Theorem subseq_refl : forall (l : list nat), subseq l l.
 Proof.
   intros l.
   induction l.
-    - apply ss1.
-    - apply ss3. apply IHl.
+    - apply subseq_nil.
+    - apply subseq_head. apply IHl.
 Qed.
 
 Lemma subseq_lnil : forall (l : list nat), subseq [] l.
 Proof.
     intros l.
     induction l.
-      - apply ss1.
-      - apply ss2. apply IHl.
+      - apply subseq_nil.
+      - apply subseq_head_r. apply IHl.
 Qed.
 
 Lemma subseq_cons : forall (l1 l2 : list nat) (n : nat),
@@ -1202,7 +1202,7 @@ Proof.
   intros l1 l2.
   induction l1.
     - intros . apply subseq_lnil.
-    - intros . apply ss2. apply H.
+    - intros . apply subseq_head_r. apply H.
 Qed.
 
 Theorem subseq_app : forall (l1 l2 l3 : list nat),
@@ -1213,8 +1213,8 @@ Proof.
   generalize dependent l3.
   induction H.
     - intros . apply subseq_lnil.
-    - intros l. simpl. apply ss2. apply IHsubseq.
-    - intros . simpl. apply ss3. apply IHsubseq.
+    - intros l. simpl. apply subseq_head_r. apply IHsubseq.
+    - intros . simpl. apply subseq_head. apply IHsubseq.
 Qed.
 
 Theorem subseq_trans : forall (l1 l2 l3 : list nat),
@@ -1228,10 +1228,10 @@ Proof.
   generalize dependent l1.
   induction H0.
     - intros . apply H.
-    - intros . apply ss2. apply IHsubseq. apply H.
+    - intros . apply subseq_head_r. apply IHsubseq. apply H.
     - intros . inversion H.
-      + apply ss2. apply IHsubseq. apply H3.
-      +  apply ss3. apply IHsubseq. apply H3.
+      + apply subseq_head_r. apply IHsubseq. apply H3.
+      +  apply subseq_head. apply IHsubseq. apply H3.
 Qed.
 (** [] *)
 
@@ -2561,34 +2561,90 @@ Proof.
             * apply le_Sn_le_stt in H. apply H.
 Qed.
 
+Lemma filter_le_l' : forall (X : Type) (n : nat) (l : list X) (test : X -> bool),
+  n <= length (filter test l) -> n <= length l.
+Proof.
+  intros X.
+  intros n l test.
+  generalize dependent n.
+  induction l.
+    - simpl. intros. apply H.
+    - intros. simpl. destruct n.
+      + apply O_le_n.
+      + simpl in H. destruct (test x) eqn:Eqtx.
+        * simpl in H. apply n_le_m__Sn_le_Sm. apply Sn_le_Sm__n_le_m in H. apply IHl.
+          apply H.
+        * apply n_le_m__Sn_le_Sm. apply IHl. apply le_S in H. apply Sn_le_Sm__n_le_m in H. apply H.
+Qed.
 
-Theorem filter_challenge_2 : forall (l ls : list nat) (test : nat -> bool),
-  subseq ls l -> All (fun n => test n = true) ls -> length (filter test l) >= length ls.
+Lemma subseq_head_eq : forall (l1 l2 : list nat) (n : nat),
+  subseq (n :: l1) (n :: l2) -> subseq l1 l2.
 Proof.
   intros.
-  generalize dependent l.
+  generalize dependent l1.
+  generalize dependent n.
+  induction l2.
+    - intros. inversion H. inversion H2. inversion H1. apply subseq_nil. 
+    - intros. inversion H.
+      + inversion H2.
+        * apply subseq_head_r. apply (subseq_head_r _ _ n) in H6. apply IHl2 in H6. apply H6.
+        * apply subseq_head_r. apply H5.
+      + apply H1.
+Qed.
+
+Theorem filter_challenge_2 : forall (l ls : list nat) (test : nat -> bool),
+  subseq ls l /\ All (fun n => test n = true) ls -> length (filter test l) >= length ls.
+Proof.
+  intros.
+  (* generalize dependent l.
   induction ls.
     - intros. simpl in *. unfold ge. apply O_le_n.
+    - intros. simpl in *. destruct H as [H [H0 H1]]. unfold ge in *.
+    
     - intros. simpl in *. destruct H0. unfold ge in *. apply subseq_len_le_nat in H as H2.
       assert ( S (length ls) <= length (filter test l) -> S (length ls) <= length l). {
         intros. simpl in H2. apply H2.
-      }
+      } *)
       
 
   generalize dependent ls.
   induction l.
-    - intros. inversion H. simpl. unfold ge. apply le_n.
-    - intros. destruct ls.
+    - intros. destruct H. inversion H. simpl. unfold ge. apply le_n.
+    (* - intros. destruct H. unfold ge in *. destruct ls.
+      + simpl. apply O_le_n.
+      + simpl in *. destruct H0. destruct (x =? x0) eqn:Eqeqx.
+        * apply eqb_eq in Eqeqx. rewrite Eqeqx. rewrite H0. simpl. apply n_le_m__Sn_le_Sm.
+          apply IHl. split. rewrite Eqeqx in H. apply subseq_head in H.
+    - intros. destruct H. unfold ge in *. destruct (test x) eqn:Eqtx.
+      + simpl in *. rewrite Eqtx. simpl. apply le_S. *)
+
+    - intros. destruct H. destruct ls.
       + unfold ge. simpl. apply O_le_n.
-      + unfold ge in *. simpl in *. destruct H0. destruct (test x) eqn:Eqtx.
-        * simpl. apply n_le_m__Sn_le_Sm. apply IHl.
-    
-    - intros. unfold ge in *. destruct (test x) eqn:Eqtx.
-      + simpl in *. rewrite Eqtx. simpl. apply le_S. apply IHl.
+      + unfold ge in *. destruct H0. inversion H.
+        * simpl in *. destruct (test x) eqn:Eqtx.
+          ** simpl. apply n_le_m__Sn_le_Sm. apply IHl. split. apply (subseq_head_r _ _ x0) in H4. apply subseq_head_eq in H4. apply H4.
+             apply H1.
+          ** assert (All (fun n : nat => test n = true) (x0 :: ls)). {
+               simpl. split. apply H0. apply H1.
+             }
+             simpl. assert ( subseq (x0 :: ls) l /\ All (fun n : nat => test n = true) (x0 :: ls)). {
+               split. apply H4. apply H6.
+             }
+             apply IHl in H7. simpl in H7. apply H7.
+        * rewrite H5 in *. destruct (test x) eqn:Eqtx.
+          ** simpl. rewrite Eqtx. simpl in *. apply n_le_m__Sn_le_Sm. apply IHl. split. apply H3. apply H1.
+          ** discriminate H0.
+Qed.
 
-(* FILL IN HERE
+(* Print nostutter_t.
 
-    [] *)
+Inductive nostutter' {X : Type} : list X -> Prop :=
+  | nostutter_nil' : nostutter' [ ]
+  | nostutter_t' (l : list X) (n m : X) (H : n <> m) (H1 : nostutter' (m :: l)) : nostutter' (n :: m :: l)
+  | nostutter_one' : forall n : X, nostutter' [n].
+
+Print nostutter'. *)
+
 
 (** **** Exercise: 4 stars, standard, optional (palindromes)
 
@@ -2614,17 +2670,28 @@ Proof.
 *)
 
 Inductive pal {X:Type} : list X -> Prop :=
-(* FILL IN HERE *)
+  | pal_nil : pal []
+  | pal_one (n : X) : pal [n]
+  | pal_app (l : list X) (n : X) (H : pal l) : pal (n :: l ++ [n])
 .
 
 Theorem pal_app_rev : forall (X:Type) (l : list X),
   pal (l ++ (rev l)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction l.
+    - simpl. apply pal_nil.
+    - simpl. rewrite app_assoc. apply pal_app. apply IHl.
+Qed.
 
 Theorem pal_rev : forall (X:Type) (l: list X) , pal l -> l = rev l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction H.
+    - simpl. reflexivity.
+    - simpl. reflexivity.
+    - simpl. rewrite rev_app_distr. simpl. rewrite <- IHpal. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, standard, optional (palindrome_converse)
@@ -2636,10 +2703,31 @@ Proof.
      forall l, l = rev l -> pal l.
 *)
 
+Lemma app_pal : forall (X:Type) (l: list X) (x : X),
+  l <> [] /\ pal (x :: l) -> exists l' : list X, l = l' ++ [x].
+Proof.
+  intros.
+  destruct H.
+  inversion H0.
+    - unfold not in H. symmetry in H3. apply H in H3. destruct H3.
+    - exists l0. reflexivity.
+Qed.
+
+Lemma rev_eq_app : forall (X:Type) (l: list X) (x : X),
+  x :: l = rev l ++ [x] -> l = rev l.
+Proof.
+  intros X l.
+  induction l.
+    - intros. simpl. reflexivity.
+    - intros. simpl in *.
+
 Theorem palindrome_converse: forall {X: Type} (l: list X),
     l = rev l -> pal l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction l.
+    - apply pal_nil.
+    - simpl in H. 
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (NoDup)
