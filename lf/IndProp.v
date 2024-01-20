@@ -2713,19 +2713,26 @@ Proof.
     - exists l0. reflexivity.
 Qed.
 
+Lemma pal_ev_len: forall (X : Type) (l : list X),
+  pal l -> (ev (length l)) -> exists l' : list X, l = l' ++ (rev l').
+Proof.
+
+Qed.
+
+
 Lemma rev_eq_pal_length: forall (X: Type) (n: nat) (l: list X), length l <= n -> l = rev l -> pal l.
 Proof.
   intros X n.
   induction n.
     - intros. inversion H. destruct l. apply pal_nil. discriminate H2.
-    - 
+    - intros. apply IHn. 
 
   intros X n l.
   generalize dependent n.
   induction l.
     - intros. apply pal_nil.
     - intros. simpl in H0.
-Qed.
+Abort.
   
 Theorem palindrome_converse: forall {X: Type} (l: list X),
     l = rev l -> pal l.
