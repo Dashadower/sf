@@ -2713,20 +2713,15 @@ Proof.
     - exists l0. reflexivity.
 Qed.
 
-Lemma ev_list_decomp : forall (X: Type) (l : list X),
-  (Even (length l)) -> exists (m n : list X), l = m ++ n /\ (Even (length m)) /\ (Even (length n)).
+Lemma rev_eq_pal_length: forall (X: Type) (n: nat) (l: list X), length l <= n -> l = rev l -> pal l.
 Proof.
-  intros X l.
-  induction l.
-    - intros. simpl in H. exists []. exists []. simpl. split. reflexivity. split. apply H. apply H.
-    - 
+
+Qed.
   
 Theorem palindrome_converse: forall {X: Type} (l: list X),
     l = rev l -> pal l.
 Proof.
   intros.
-  destruct (even (length l)) eqn:Eqev.
-    - 
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (NoDup)
