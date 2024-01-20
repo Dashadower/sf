@@ -2716,7 +2716,11 @@ Qed.
 Lemma pal_ev_len: forall (X : Type) (l : list X),
   pal l -> (ev (length l)) -> exists l' : list X, l = l' ++ (rev l').
 Proof.
-
+  intros X l.
+  remember (length l) as ll.
+  induction ll.
+    - intros. symmetry in Heqll. destruct l. exists []. simpl. reflexivity. simpl in Heqll. inversion Heqll.
+    - intros.
 Qed.
 
 
