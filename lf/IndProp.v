@@ -2713,11 +2713,6 @@ Proof.
     - exists l0. reflexivity.
 Qed.
 
-(*Lemma app_app_pal : forall (X : Type) (l : list X) (x : x),
-  x :: l ++ [x] -> 
-*)
-
-
 Lemma l_eq_nil : forall (X : Type) (l : list X) (x : X),
   l ++ [x] = [] -> False.
 Proof.
@@ -2727,7 +2722,7 @@ Proof.
     - simpl in *. inversion H.
 Qed.
 
-Lemma app_eq_eq : forall (X : Type) (l m : list X) (x : X),
+Lemma tail_app_eq : forall (X : Type) (l m : list X) (x : X),
   l ++ [x] = m ++ [x] -> l = m.
 Proof.
   intros X l.
@@ -2737,18 +2732,6 @@ Proof.
     - simpl. intros. destruct m.
         + inversion H. apply l_eq_nil in H2. destruct H2.
         + simpl in H. inversion H. apply IHl in H2. rewrite H2. reflexivity.
-Qed.
-
-Lemma tail_app_eq : forall (X : Type) (l m : list X) (x : X),
-  l ++ [x] = m ++ [x] -> l = m.
-Proof.
-  intros X l.
-  induction l.
-    - intros. simpl in *. destruct m. reflexivity. simpl in H. inversion H. symmetry in H2. 
-      apply l_eq_nil in H2. destruct H2.
-    - intros.
-      simpl in *. replace (x :: l ++ [x0]) with ((x :: l) ++ [x0]) in H. apply app_eq_eq in H. apply H.
-      simpl. reflexivity.
 Qed.
 
 Lemma length_app_tail : forall (X : Type) (l  : list X) (x : X),
