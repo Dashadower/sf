@@ -2828,11 +2828,18 @@ Definition manual_grade_for_NoDup_disjoint_etc : option (nat*string) := None.
 
 (** First prove an easy and useful lemma. *)
 
-Lemma in_split : forall (X:Type) (x:X) (l:list X),
+Lemma in_split : ∀ (X:Type) (x:X) (l:list X),
   In x l ->
   exists l1 l2, l = l1 ++ x :: l2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros .
+  induction l.
+    - simpl in H. destruct H.
+    - simpl in *. destruct H.
+      + rewrite H. exists []. exists l. simpl. reflexivity.
+      + apply IHl in H. destruct H as (l1 & l2 & H).exists (x0 :: l1). exists l2. simpl.
+        rewrite H. reflexivity.
+Qed.
 
 (** Now define a property [repeats] such that [repeats X l] asserts
     that [l] contains at least one repeated element (of type [X]).  *)
