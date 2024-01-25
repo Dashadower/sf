@@ -2787,6 +2787,15 @@ Qed.
   
 Theorem palindrome_converse: forall {X: Type} (l: list X),
     l = rev l -> pal l.
+Proof.
+  intros.
+  remember (length l) as n.
+  apply rev_eq_pal_length with (n := n).
+  induction n.
+    - rewrite Heqn. apply le_n.
+    - rewrite Heqn. apply le_n.
+  - apply H.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (NoDup)
