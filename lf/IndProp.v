@@ -2719,7 +2719,9 @@ Proof.
   intros X n.
   induction n.
     - intros. inversion H. destruct l. apply pal_nil. discriminate H2.
-    - intros. apply IHn. 
+    - intros. destruct l.
+      + apply pal_nil.
+      + simpl in H0. apply IHn. simpl. simpl in H. apply Sn_le_Sm__n_le_m.
 Qed.
   
 Theorem palindrome_converse: forall {X: Type} (l: list X),
