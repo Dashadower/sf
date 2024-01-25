@@ -2713,6 +2713,61 @@ Proof.
     - exists l0. reflexivity.
 Qed.
 
+(*Lemma app_app_pal : forall (X : Type) (l : list X) (x : x),
+  x :: l ++ [x] -> 
+*)
+
+
+Lemma l_eq_nil : forall (X : Type) (l : list X) (x : X),
+  l ++ [x] = [] -> False.
+Proof.
+  intros.
+  induction l.
+    - inversion H.
+    - simpl in *. inversion H.
+Qed.
+
+Lemma app_eq_eq : forall (X : Type) (l m : list X) (x : X),
+  l ++ [x] = m ++ [x] -> l = m.
+Proof.
+  intros X l.
+  induction l.
+    - simpl. intros. destruct m. reflexivity. simpl in *. inversion H. symmetry in H2.
+      apply l_eq_nil in H2. destruct H2.
+    - simpl. intros. destruct m.
+        + inversion H. apply l_eq_nil in H2. destruct H2.
+        + simpl in H. inversion H. apply IHl in H2. rewrite H2. reflexivity.
+Qed.
+
+Lemma tail_app_eq : forall (X : Type) (l m : list X) (x : X),
+  l ++ [x] = m ++ [x] -> l = m.
+Proof.
+  intros X l.
+  induction l.
+    - intros. simpl in *. destruct m. reflexivity. simpl in H. inversion H. symmetry in H2. 
+      apply l_eq_nil in H2. destruct H2.
+    - intros.
+      simpl in *. replace (x :: l ++ [x0]) with ((x :: l) ++ [x0]) in H. apply app_eq_eq in H. apply H.
+      simpl. reflexivity.
+Qed.
+
+Lemma length_app_tail : forall (X : Type) (l  : list X) (x : X),
+  length (l ++ [x]) = S (length (l)).
+Proof.
+  intros.
+  induction l.
+    - simpl. reflexivity.
+    - simpl in *. f_equal. apply IHl.
+Qed.
+
+Lemma rev_tail : forall (X : Type) (l : list X) (x : X),
+  rev (l ++ [x]) = x :: (rev l).
+Proof.
+  intros.
+  induction l.
+    - simpl. reflexivity.
+    - simpl in *. rewrite IHl. simpl. reflexivity.
+Qed.
 
 Lemma rev_eq_pal_length: forall (X: Type) (n: nat) (l: list X), length l <= n -> l = rev l -> pal l.
 Proof.
@@ -2721,7 +2776,13 @@ Proof.
     - intros. inversion H. destruct l. apply pal_nil. discriminate H2.
     - intros. destruct l.
       + apply pal_nil.
-      + simpl in H0. apply IHn. simpl. simpl in H. apply Sn_le_Sm__n_le_m.
+      + inversion H0. destruct (rev l).
+        * inversion H2. apply pal_one.
+        * inversion H2. rewrite H3 in H2. apply pal_app. assert (H5 := H0). rewrite H4 in H5.
+          simpl in H5. replace (rev (l0 ++ [x0])) with (x0 :: (rev l0)) in H5. rewrite H3 in H5. simpl in *.
+          inversion H5. apply tail_app_eq in H6 as H7. apply IHn. rewrite H4 in H. apply Sn_le_Sm__n_le_m in H.            
+          simpl in H. rewrite length_app_tail in H. apply le_S in H. apply Sn_le_Sm__n_le_m in H. apply H. apply H7.
+          simpl. rewrite rev_tail. reflexivity.
 Qed.
   
 Theorem palindrome_converse: forall {X: Type} (l: list X),
