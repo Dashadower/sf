@@ -2837,7 +2837,7 @@ Proof.
     - simpl in H. destruct H.
     - simpl in *. destruct H.
       + rewrite H. exists []. exists l. simpl. reflexivity.
-      + apply IHl in H. destruct H as (l1 & l2 & H).exists (x0 :: l1). exists l2. simpl.
+      + apply IHl in H. destruct H as (l1 & l2 & H). exists (x0 :: l1). exists l2. simpl.
         rewrite H. reflexivity.
 Qed.
 
@@ -2845,7 +2845,8 @@ Qed.
     that [l] contains at least one repeated element (of type [X]).  *)
 
 Inductive repeats {X:Type} : list X -> Prop :=
-  (* FILL IN HERE *)
+  | repeats_x (x : X) (l : list X) : In x l -> repeats (x :: l)
+  | repeats_app (x : X) (l : list X) : repeats l -> repeats (x :: l)
 .
 
 (* Do not modify the following line: *)
@@ -2864,13 +2865,17 @@ Definition manual_grade_for_check_repeats : option (nat*string) := None.
     manage to do this, you will not need the [excluded_middle]
     hypothesis. *)
 Theorem pigeonhole_principle: excluded_middle ->
-  forall (X:Type) (l1  l2:list X),
-  (forall x, In x l1 -> In x l2) ->
+  ∀ (X:Type) (l1  l2:list X),
+  (∀ x, In x l1 -> In x l2) ->
   length l2 < length l1 ->
   repeats l1.
 Proof.
-  intros EM X l1. induction l1 as [|x l1' IHl1'].
-  (* FILL IN HERE *) Admitted.
+  intros EM X l1. 
+  induction l1 as [|x l1' IHl1'].
+    - simpl. intros. inversion H0.
+    - simpl in *. intros. apply repeats_app. apply IHl1' with (l2 := l2).
+      intros. apply H. right. apply H1. unfold lt in *. apply Sn_le_Sm__n_le_m in H0.
+
 (** [] *)
 
 (* ================================================================= *)
