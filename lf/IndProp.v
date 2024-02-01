@@ -2874,14 +2874,9 @@ Proof.
   induction l1 as [|x l1' IHl1'].
     - simpl. intros. inversion H0.
  
-    - intros.
-      destruct l2.
-        + simpl in *. apply repeats_app. apply IHl1' with (l2 := [x]). simpl. intros. 
-          right. apply H with (x := x0). right. apply H1. simpl. unfold lt in *. apply Sn_le_Sm__n_le_m in H0. inversion H0.
-    apply IHl1' with (l2 := l2).
-   - intros. apply repeats_x.
-    - simpl in *. intros. apply repeats_app. apply IHl1' with (l2 := l2).
-      intros. apply H. right. apply H1. unfold lt in *. apply Sn_le_Sm__n_le_m in H0.
+    - destruct l2.
+        + intros. destruct (H x).(* HELP: how does this change the goal??? *) unfold In. left. reflexivity.
+        + 
 
 
 (** [] *)
