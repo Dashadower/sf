@@ -2873,10 +2873,24 @@ Proof.
   intros EM X l1. 
   induction l1 as [|x l1' IHl1'].
     - simpl. intros. inversion H0.
- 
     - destruct l2.
-        + intros. destruct (H x).(* HELP: how does this change the goal??? *) unfold In. left. reflexivity.
-        + 
+        + intros. destruct (H x). (* HELP: how does this change the goal??? *) unfold In. left. reflexivity.
+        + intros. destruct (EM (In x l1')) as [T | F]. apply repeats_x. apply T.
+          destruct (in_split  _ x (x0 :: l2)) as [l3 [l4 P]].
+            * apply H. simpl. left. reflexivity.
+            * apply repeats_app. apply IHl1' with (l2 := l3 ++ l4). intros. rewrite P in H.
+              assert ( x_neq_x1 : x <> x1). {
+                unfold not. unfold not in F. intros. rewrite H2 in F. apply F. apply H1. 
+              }
+
+              assert (in_x_eq : In x1 (l3 ++ x :: l4) -> In x1 (l3 ++ l4)). {
+                intros. unfold not in x_neq_x1. apply In_app_iff in H2. destruct H2 as [In3 | In4].
+                apply In_app_iff. left. apply In3. apply In_app_iff. right. unfold In in In4. destruct In4.
+                apply x_neq_x1 in H2. destruct H2. apply H2.
+              }
+              apply in_x_eq. apply H. unfold not
+            
+            
 
 
 (** [] *)
