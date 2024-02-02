@@ -2888,11 +2888,10 @@ Proof.
                 apply In_app_iff. left. apply In3. apply In_app_iff. right. unfold In in In4. destruct In4.
                 apply x_neq_x1 in H2. destruct H2. apply H2.
               }
-              apply in_x_eq. apply H. unfold not
-            
-            
-
-
+              apply in_x_eq. apply H. unfold not in x_neq_x1. unfold In. right. apply H1.
+              rewrite P in H0. rewrite app_length in H0. simpl in H0. rewrite <- plus_n_Sm in H0.
+              apply Sn_le_Sm__n_le_m in H0. unfold lt. rewrite app_length. apply H0.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
