@@ -185,10 +185,12 @@ Proof. reflexivity. Qed.
 
     First, the empty map returns its default element for all keys: *)
 
-Lemma t_apply_empty : forall (A : Type) (x : string) (v : A),
+Lemma t_apply_empty : ∀ (A : Type) (x : string) (v : A),
   (_ !-> v) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A x v.
+  unfold t_empty. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (t_update_eq)
@@ -197,10 +199,14 @@ Proof.
     and then look up [x] in the map resulting from the [update], we
     get back [v]: *)
 
-Lemma t_update_eq : forall (A : Type) (m : total_map A) x v,
+Lemma t_update_eq : ∀ (A : Type) (m : total_map A) x v,
   (x !-> v ; m) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x v.
+  unfold t_update.
+  rewrite String.eqb_refl.
+  reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (t_update_neq)
@@ -209,11 +215,15 @@ Proof.
     look up a _different_ key [x2] in the resulting map, we get the
     same result that [m] would have given: *)
 
-Theorem t_update_neq : forall (A : Type) (m : total_map A) x1 x2 v,
+Theorem t_update_neq : ∀ (A : Type) (m : total_map A) x1 x2 v,
   x1 <> x2 ->
   (x1 !-> v ; m) x2 = m x2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x1 x2 v.
+  intros H.
+  unfold t_update.
+  apply String.eqb_neq in H. rewrite H. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (t_update_shadow)
@@ -224,10 +234,17 @@ Proof.
     to any key) as the simpler map obtained by performing just
     the second [update] on [m]: *)
 
-Lemma t_update_shadow : forall (A : Type) (m : total_map A) x v1 v2,
+Lemma t_update_shadow : ∀ (A : Type) (m : total_map A) x v1 v2,
   (x !-> v2 ; x !-> v1 ; m) = (x !-> v2 ; m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x v1 v2.
+  unfold t_update.
+  apply functional_extensionality.
+  intros x0.
+  destruct (x =? x0)%string eqn:Eqe.
+    - reflexivity.
+    - reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (t_update_same)
@@ -241,10 +258,17 @@ Proof.
     that if we update a map to assign key [x] the same value as it
     already has in [m], then the result is equal to [m]: *)
 
-Theorem t_update_same : forall (A : Type) (m : total_map A) x,
+Theorem t_update_same : ∀ (A : Type) (m : total_map A) x,
   (x !-> m x ; m) = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m x.
+  unfold t_update.
+  apply functional_extensionality.
+  intros x0.
+  destruct (eqb_spec x x0).
+    - rewrite e. reflexivity.
+    - reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, especially useful (t_update_permute)
@@ -253,14 +277,25 @@ Proof.
     the [update] function: If we update a map [m] at two distinct
     keys, it doesn't matter in which order we do the updates. *)
 
-Theorem t_update_permute : forall (A : Type) (m : total_map A)
+Theorem t_update_permute : ∀ (A : Type) (m : total_map A)
                                   v1 v2 x1 x2,
   x2 <> x1 ->
   (x1 !-> v1 ; x2 !-> v2 ; m)
   =
   (x2 !-> v2 ; x1 !-> v1 ; m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros A m v1 v2 x1 x2.
+  intros H.
+  unfold t_update.
+  apply functional_extensionality.
+  intros x.
+  apply String.eqb_neq in H.
+  destruct (eqb_spec x x1).
+    - rewrite <- e in H. apply String.eqb_eq in e.
+      rewrite String.eqb_sym in e. rewrite e. rewrite H. reflexivity.
+    - apply String.eqb_neq in n. rewrite String.eqb_sym in n. rewrite n.
+      reflexivity.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
