@@ -509,7 +509,8 @@ Proof.
   intros.
   induction a; try (simpl; reflexivity);
     try (simpl in *; rewrite IHa1; rewrite IHa2; reflexivity).
-
+    destruct a1.
+      -
 
 (* ================================================================= *)
 (** ** Defining New Tactics *)
