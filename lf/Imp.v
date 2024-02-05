@@ -492,9 +492,24 @@ Qed.
     optimization and its correctness proof -- and build up
     incrementally to something more interesting.)  *)
 
-(* FILL IN HERE
+Print aexp.
+Fixpoint optimize_0times (a : aexp) : aexp :=
+  match a with
+    | ANum n => ANum n
+    | APlus  e1 e2 => APlus  (optimize_0times e1) (optimize_0times e2)
+    | AMinus e1 e2 => AMinus (optimize_0times e1) (optimize_0times e2)
+    | AMult (ANum 0) _ => ANum 0
+    | AMult _ (ANum 0) => ANum 0
+    | AMult e1 e2 => AMult (optimize_0times e1) (optimize_0times e2)
+  end.
+  
+Theorem optimize_0times_sound : forall (a : aexp),
+  aeval (optimize_0times a) = aeval a.
+Proof.
+  intros.
+  induction a; try (simpl; reflexivity);
+    try (simpl in *; rewrite IHa1; rewrite IHa2; reflexivity).
 
-    [] *)
 
 (* ================================================================= *)
 (** ** Defining New Tactics *)
