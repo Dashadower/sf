@@ -499,17 +499,59 @@ Fixpoint optimize_0times (a : aexp) : aexp :=
     | APlus  e1 e2 => APlus  (optimize_0times e1) (optimize_0times e2)
     | AMinus e1 e2 => AMinus (optimize_0times e1) (optimize_0times e2)
     | AMult (ANum 0) _ => ANum 0
-    | AMult _ (ANum 0) => ANum 0
+(*    | AMult _ (ANum 0) => ANum 0 *)
     | AMult e1 e2 => AMult (optimize_0times e1) (optimize_0times e2)
   end.
-  
+
+(*
+We must show that for all aexp a,
+aeval (optimize_0times a) = aeval a.
+
+Proof.
+We start by induction on all possible forms of aexp a:
+
+- Case ANum n:
+  Straightforward from the definition of optimize_0times_a
+
+- Case APlus a_1 a_2:
+  By definition of optimize, APlus a_1 a_2 becomes aeval (optimize a_1) + aeval (optimize a_2)
+  from which we apply induction hypothesis on both a_1 and a_2
+
+- Case AMinus a_1 a_2:
+  Same case as APlus a_1 a_2; apply induction hypotheses
+
+- Case AMult a_1 a_2:
+  We analyze the possible forms of aexp a_1:
+  Suppose a_1 is ANum n for some nat n. Consider the following cases for n:
+    + Case 0: By definition of optimize, the result becomes ANum 0 establishing equality
+    + Case S n' for some nat n': the function simplifies to aeval ( optimize ( AMult (ANum (S n')) a_2))
+       We then consider the possible forms of aexp a_2:
+         * Case ANum m for some nat m: Consider the following cases for m:
+             ** Case 0: By definition of optimize, the result becomes ANum 0 establishing equality
+             ** Case S m' for some nat m': Straightforward from definition of optimize.
+         * Case APlus 
+         * Case AMinus
+         * Case AMult
+       Apply induction hypothesis for a_2, which establishes equality.
+  For other cases, apply the induction hypotheses establishes the equality.
+*)
+
+
 Theorem optimize_0times_sound : forall (a : aexp),
   aeval (optimize_0times a) = aeval a.
 Proof.
   intros.
-  induction a; try (simpl; reflexivity);
-    try (simpl in *; rewrite IHa1; rewrite IHa2; reflexivity).
-    destruct a1.
+  induction a.
+    - simpl. reflexivity.
+    - simpl. rewrite IHa1. rewrite IHa2. reflexivity.
+    - simpl. rewrite IHa1. rewrite IHa2. reflexivity.
+    - destruct a1 eqn:Eqa1.
+      + destruct n eqn:Eqn.
+        * simpl. reflexivity.
+        * simpl. rewrite IHa2. reflexivity.
+      + simpl in *. rewrite IHa2. rewrite IHa1. reflexivity.
+      + simpl in *. rewrite IHa1. rewrite IHa2. reflexivity.
+      + simpl.
       -
 
 (* ================================================================= *)
