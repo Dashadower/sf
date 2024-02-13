@@ -846,6 +846,8 @@ Inductive aevalR : aexp -> nat -> Prop :=
     Write out a corresponding definition of boolean evaluation as a
     relation (in inference rule notation). *)
 
+Print bexp.
+Module bevalRpractice.
 Inductive bevalR : bexp -> bool -> Prop :=
   | E_BTrue : bevalR BTrue true
   | E_BFalse : bevalR BFalse false
@@ -860,9 +862,10 @@ Inductive bevalR : bexp -> bool -> Prop :=
   | E_BNot (b : bexp) (e : bool) (H : bevalR b e) : bevalR (BNot b) (negb e)
   | E_BAnd (b1 b2 : bexp) (e1 e2 : bool)
       (H1 : bevalR b1 e1) (H2 : bevalR b2 e2) : bevalR (BAnd b1 b2) (andb e1 e2).
-
+Print bevalR.
 (* Do not modify the following line: *)
 Definition manual_grade_for_beval_rules : option (nat*string) := None.
+End bevalRpractice.
 (** [] *)
 
 (* ================================================================= *)
@@ -928,15 +931,35 @@ Qed.
     [aevalR], and prove that it is equivalent to [beval]. *)
 
 Reserved Notation "e '==>b' b" (at level 90, left associativity).
+Print bexp.
 Inductive bevalR: bexp -> bool -> Prop :=
-(* FILL IN HERE *)
+  | E_BTrue : BTrue ==>b true
+  | E_BFalse : BFalse ==>b false
+  | E_BEq (a1 a2 : aexp) (n1 n2 : nat) : 
+      (a1 ==> n1) -> (a2 ==> n2) -> (BEq a1 a2) ==>b (n1 =? n2)
+  | E_BNeq (a1 a2 : aexp) (n1 n2 : nat) :
+      (a1 ==> n1) -> (a2 ==> n2) -> (BNeq a1 a2) ==>b (negb (n1 =? n2))
+  | E_BLe (a1 a2 : aexp) (n1 n2 : nat) :
+      (a1 ==> n1) -> (a2 ==> n2) -> (BLe a1 a2) ==>b (n1 <=? n2)
+  | E_BGt (a1 a2 : aexp) (n1 n2 : nat) :
+      (a1 ==> n1) -> (a2 ==> n2) -> (BGt a1 a2) ==>b negb (n1 <=? n2)
+  | E_BNot (be : bexp) (b : bool) :
+      (be ==>b b) -> (BNot be) ==>b negb b
+  | E_BAnd (be1 be2 : bexp) (b1  b2 : bool) :
+      (be1 ==>b b1) -> (be2 ==>b b2) -> (BAnd be1 be2) ==>b (andb b1 b2)
 where "e '==>b' b" := (bevalR e b) : type_scope
 .
 
-Lemma beval_iff_bevalR : forall b bv,
+Lemma beval_iff_bevalR : ∀ b bv,
   b ==>b bv <-> beval b = bv.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction b.
+    - split. intros. inversion H. simpl. reflexivity.
+      intros. inversion H. simpl. apply E_BTrue.
+    - split. intros. inversion H. simpl. reflexivity.
+      intros. inversion H. simpl. apply E_BFalse.
+    - split. intros. 
 (** [] *)
 
 End AExp.
