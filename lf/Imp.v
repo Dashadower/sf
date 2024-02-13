@@ -845,7 +845,21 @@ Inductive aevalR : aexp -> nat -> Prop :=
 
     Write out a corresponding definition of boolean evaluation as a
     relation (in inference rule notation). *)
-(* FILL IN HERE *)
+
+Inductive bevalR : bexp -> bool -> Prop :=
+  | E_BTrue : bevalR BTrue true
+  | E_BFalse : bevalR BFalse false
+  | E_BEq (a1 a2 : aexp) (e1 e2 : nat)
+      (H1 : aevalR a1 e1) (H2 : aevalR a2 e2) : bevalR (BEq a1 a2) (e1 =? e2)
+  | E_BNeq (a1 a2 : aexp) (e1 e2 : nat)
+      (H1 : aevalR a1 e1) (H2 : aevalR a2 e2) : bevalR (BNeq a1 a2) (negb (e1 =? e2))
+  | E_BLe (a1 a2 : aexp) (e1 e2 : nat)
+      (H1 : aevalR a1 e1) (H2 : aevalR a2 e2) : bevalR (BLe a1 a2) (e1 <=? e2)
+  | E_BGt (a1 a2 : aexp) (e1 e2 : nat)
+      (H1 : aevalR a1 e1) (H2 : aevalR a2 e2) : bevalR (BGt a1 a2) (negb (e1 <=? e2))
+  | E_BNot (b : bexp) (e : bool) (H : bevalR b e) : bevalR (BNot b) (negb e)
+  | E_BAnd (b1 b2 : bexp) (e1 e2 : bool)
+      (H1 : bevalR b1 e1) (H2 : bevalR b2 e2) : bevalR (BAnd b1 b2) (andb e1 e2).
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_beval_rules : option (nat*string) := None.
