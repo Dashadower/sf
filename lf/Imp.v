@@ -959,7 +959,24 @@ Proof.
       intros. inversion H. simpl. apply E_BTrue.
     - split. intros. inversion H. simpl. reflexivity.
       intros. inversion H. simpl. apply E_BFalse.
-    - split. intros. 
+    - split. 
+        + intros. inversion H. clear H0 H1. simpl. apply aeval_iff_aevalR in H2.
+          apply aeval_iff_aevalR in H4. subst. reflexivity.
+        + intros. simpl in *. rewrite <- H. apply E_BEq. apply aeval_iff_aevalR. reflexivity.
+          apply aeval_iff_aevalR. reflexivity.
+    - split.
+        + intros. inversion H. clear H0 H1. simpl. apply aeval_iff_aevalR in H2, H4.
+          subst. reflexivity.
+        + intros. simpl in *. rewrite <- H. apply E_BNeq; apply aeval_iff_aevalR; reflexivity.
+    - split.
+        + intros. inversion H. simpl. apply aeval_iff_aevalR in H2, H4. subst. reflexivity.
+        + intros. simpl in *. rewrite <- H. apply E_BLe; apply aeval_iff_aevalR; reflexivity.
+    - split.
+        + intros. inversion H. simpl. apply aeval_iff_aevalR in H2, H4. subst. reflexivity.
+        + intros. simpl in *. rewrite <- H. apply E_BGt; apply aeval_iff_aevalR; reflexivity.
+    - split.
+        (* If b ==>b b0 then BNot b ==>b negb b0 *)
+        + intros. inversion H. clear H0 be. apply E_BNot in H1. 
 (** [] *)
 
 End AExp.
