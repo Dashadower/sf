@@ -953,7 +953,7 @@ where "e '==>b' b" := (bevalR e b) : type_scope
 Lemma beval_iff_bevalR : ∀ b bv,
   b ==>b bv <-> beval b = bv.
 Proof.
-  intros.
+  intros b.
   induction b.
     - split. intros. inversion H. simpl. reflexivity.
       intros. inversion H. simpl. apply E_BTrue.
@@ -976,7 +976,14 @@ Proof.
         + intros. simpl in *. rewrite <- H. apply E_BGt; apply aeval_iff_aevalR; reflexivity.
     - split.
         (* If b ==>b b0 then BNot b ==>b negb b0 *)
-        + intros. inversion H. clear H0 be. apply E_BNot in H1. 
+        + intros. simpl. inversion H. clear H0 be. apply IHb in H1. apply f_equal. apply H1.
+        + intros. simpl in *. rewrite <- H. apply E_BNot. apply IHb. reflexivity.
+    - split.
+        + intros. inversion H. simpl. apply IHb1 in H2. apply IHb2 in H4. subst. reflexivity.
+        + intros. simpl in *. rewrite <- H. apply E_BAnd.
+            * apply IHb1. reflexivity.
+            * apply IHb2. reflexivity.
+Qed.
 (** [] *)
 
 End AExp.
