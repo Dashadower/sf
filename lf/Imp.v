@@ -1691,12 +1691,6 @@ Check @ceval_example2.
     which you can reverse-engineer to discover the program you should
     write.  The proof of that theorem will be somewhat lengthy. *)
 
-Lemma empty_st_equals_zero_map : forall (A : Type) (m : total_map A) k,
-  (k !-> 0) = empty_st.
-Proof.
-  intros. unfold empty_st. apply t_update_same.
-Qed.
-
 Definition pup_to_n : com :=
   <{Y := 0 ; 
     while X <> 0 do 
@@ -1733,8 +1727,17 @@ Proof.
   apply E_Asgn with (st := X !-> 1 ; Y !-> 3).
   reflexivity.
   (* x = 0, Y = 3 *)
-  repeat (try rewrite t_update_shadow; rewrite t_update_permute).
+  rewrite t_update_shadow.
+  rewrite t_update_permute with (v1 := 2) (v2 := 2) (x1 := Y).
+  rewrite t_update_shadow.
+  rewrite t_update_permute with (v1 := 1) (v2 := 2).
+  rewrite t_update_shadow.
+  rewrite t_update_permute with (v1 := 3).
+  rewrite t_update_shadow.
   apply E_WhileFalse.
+  reflexivity.
+  all: unfold not; intros; inversion H.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
