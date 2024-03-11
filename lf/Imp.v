@@ -1691,15 +1691,50 @@ Check @ceval_example2.
     which you can reverse-engineer to discover the program you should
     write.  The proof of that theorem will be somewhat lengthy. *)
 
-Definition pup_to_n : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Lemma empty_st_equals_zero_map : forall (A : Type) (m : total_map A) k,
+  (k !-> 0) = empty_st.
+Proof.
+  intros. unfold empty_st. apply t_update_same.
+Qed.
 
+Definition pup_to_n : com :=
+  <{Y := 0 ; 
+    while X <> 0 do 
+      Y := Y + X ;
+      X := X - 1
+    end }>.
 Theorem pup_to_2_ceval :
   (X !-> 2) =[
     pup_to_n
   ]=> (X !-> 0 ; Y !-> 3 ; X !-> 1 ; Y !-> 2 ; Y !-> 0 ; X !-> 2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold pup_to_n.
+  apply E_Seq with (st' := (Y !-> 0; X !->2)).  (* Y := 0 *)
+  apply E_Asgn. reflexivity.
+  apply E_WhileTrue with (st' := (X !-> 1 ; Y !->2)).
+  simpl. reflexivity.
+  rewrite t_update_same. apply E_Seq with (st' := (Y !-> 2 ; X !-> 2)).
+  apply E_Asgn. reflexivity.
+  rewrite <- t_update_shadow with (v1 := 2) (v2 := 1).
+  rewrite t_update_permute with (x1 := X) (x2 := Y) (v1 := 2) (v2 := 2).
+  apply E_Asgn with (st := (Y !-> 2 ; X !-> 2)).
+  reflexivity.
+  unfold not. intros. inversion H.
+  (* X = 1, Y = 2 *)
+  apply E_WhileTrue with (st' := X !-> 0 ; Y !-> 3).
+  reflexivity.
+  apply E_Seq with (st' := X !-> 1 ; Y !-> 3).
+  rewrite <- t_update_shadow with (x := Y) (v1 := 2) (v2 := 3).
+  rewrite t_update_permute with (x1 := X) (x2 := Y) (v1 := 1) (v2 := 3).
+  apply E_Asgn with (st := X !-> 1 ; Y !-> 2).
+  reflexivity.
+  unfold not. intros. inversion H.
+  rewrite <- t_update_shadow with (v1 := 1) (v2 := 0).
+  apply E_Asgn with (st := X !-> 1 ; Y !-> 3).
+  reflexivity.
+  (* x = 0, Y = 3 *)
+  repeat (try rewrite t_update_shadow; rewrite t_update_permute).
+  apply E_WhileFalse.
 (** [] *)
 
 (* ================================================================= *)
