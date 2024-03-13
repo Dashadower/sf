@@ -1899,7 +1899,23 @@ Proof.
 
     Use either [no_whiles] or [no_whilesR], as you prefer. *)
 
-(* FILL IN HERE *)
+Theorem no_whiles_terminating: forall c st,
+  no_whilesR c -> exists st', st =[ c ]=> st'.
+Proof.
+  intros c.
+  induction c.
+    - intros. exists st. apply E_Skip.
+    - intros. exists (x !-> (aeval st a)  ; st). apply E_Asgn. reflexivity.
+    - intros. inversion H. subst. apply IHc1 with  (st := st) in H2.
+      destruct H2. apply IHc2 with (st := x) in H3. destruct H3. exists (x0).
+      apply E_Seq with (st' := x). apply H0. apply H1.
+    - intros. inversion H. subst. apply IHc1 with (st := st) in H2. apply IHc2 with (st := st) in H4.
+      destruct H2. destruct H4.
+      destruct (beval st b) eqn:Eqb.
+        + exists x. apply E_IfTrue. apply Eqb. apply H0.
+        + exists x0. apply E_IfFalse. apply Eqb. apply H1.
+    - intros. inversion H.
+Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_no_whiles_terminating : option (nat*string) := None.
