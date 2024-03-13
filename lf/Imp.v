@@ -1832,7 +1832,10 @@ Proof.
       contradictory and so can be solved in one step with
       [discriminate]. *)
 
-  (* FILL IN HERE *) Admitted.
+  induction contra; try (discriminate Heqloopdef).
+    - inversion Heqloopdef. subst. inversion H.
+    - inversion Heqloopdef. subst. clear Heqloopdef. apply IHcontra2. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (no_whiles_eqv)
@@ -1859,13 +1862,34 @@ Fixpoint no_whiles (c : com) : bool :=
     while loops.  Then prove its equivalence with [no_whiles]. *)
 
 Inductive no_whilesR: com -> Prop :=
- (* FILL IN HERE *)
+  | no_whilesR_skip : no_whilesR CSkip
+  | no_whilesR_Asgn : forall x a, no_whilesR (CAsgn x a)
+  | no_whilesR_Seq : forall c1 c2, no_whilesR c1 -> no_whilesR c2 -> no_whilesR (CSeq c1 c2)
+  | no_whilesR_If : forall b c1 c2, no_whilesR c1 -> no_whilesR c2 -> no_whilesR (CIf b c1 c2)
 .
 
 Theorem no_whiles_eqv:
-  forall c, no_whiles c = true <-> no_whilesR c.
+  ∀ c, no_whiles c = true <-> no_whilesR c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  - intros.
+    induction c.
+      + apply no_whilesR_skip.
+      + apply no_whilesR_Asgn.
+      + inversion H. apply andb_prop in H1. destruct H1. apply no_whilesR_Seq.
+        apply IHc1. apply H0. apply IHc2. apply H1.
+      + inversion H. apply andb_prop in H1. destruct H1. apply no_whilesR_If.
+        apply IHc1. apply H0. apply IHc2. apply H1.
+      + inversion H.
+  - intros.
+    induction c; try (simpl ; reflexivity).
+      + inversion H. simpl. apply andb_true_intro.
+        split. apply IHc1. apply H2. apply IHc2. apply H3.
+      + inversion H. subst. simpl. apply andb_true_intro.
+        split. apply IHc1. apply H2. apply IHc2. apply H4.
+      + inversion H.
+ Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, standard (no_whiles_terminating)
