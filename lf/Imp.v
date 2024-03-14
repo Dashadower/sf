@@ -2092,17 +2092,42 @@ Qed.
     becomes difficult, consider whether your implementation of
     [s_execute] or [s_compile] could be simplified. *)
 
-Lemma s_compile_correct_aux : forall st e stack,
+
+(* Adding this lemma to not throw warnings*)
+Lemma mult_comm : forall m n : nat,
+  m * n = n * m.
+Proof.
+  intros n m.
+  induction n as [| n' IHn'].
+    - simpl. rewrite -> mul_0_r. reflexivity.
+    - simpl.
+      rewrite -> IHn'.
+      rewrite <- mult_n_Sm.
+      rewrite -> add_comm.
+      reflexivity.
+Qed.
+
+Lemma s_compile_correct_aux : ∀ st e stack,
   s_execute st stack (s_compile e) = aeval st e :: stack.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st e.
+  induction e; try (simpl; intros; reflexivity).
+    - intros. simpl. rewrite execute_app. rewrite execute_app. rewrite IHe1. rewrite IHe2.
+      simpl. rewrite add_comm. reflexivity.
+    - intros. simpl. rewrite execute_app. rewrite execute_app. rewrite IHe1. rewrite IHe2.
+      simpl. reflexivity.
+    - intros. simpl. rewrite execute_app. rewrite execute_app. rewrite IHe1. rewrite IHe2.
+      simpl. rewrite mult_comm. reflexivity.
+Qed.
 
 (** The main theorem should be a very easy corollary of that lemma. *)
 
-Theorem s_compile_correct : forall (st : state) (e : aexp),
+Theorem s_compile_correct : ∀ (st : state) (e : aexp),
   s_execute st [] (s_compile e) = [ aeval st e ].
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction e; try (simpl; reflexivity); try (apply s_compile_correct_aux).
+Qed.
 
 (** [] *)
 
