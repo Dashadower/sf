@@ -1986,22 +1986,46 @@ Inductive sinstr : Type :=
 
 Fixpoint s_execute (st : state) (stack : list nat)
                    (prog : list sinstr)
-                 : list nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+                 : list nat :=
+   match prog with
+     | nil => stack
+     | h :: tail => 
+       match h with
+         | SPush n => s_execute st (n :: stack) tail
+         | SLoad x => s_execute st ((st x) :: stack) tail
+         | SPlus as op | SMinus as op | SMult as op => 
+           match stack with
+             | nil => s_execute st stack tail
+             | top1 :: rest =>
+               match rest with
+                 | nil => s_execute st stack tail
+                 | top2 :: rest2 => 
+                   match op with
+                     | SPlus => s_execute st ((top1 + top2) :: rest2) tail
+                     | SMinus => s_execute st ((top2 - top1) :: rest2) tail
+                     | STimes => s_execute st ((top1 * top2) :: rest2) tail
+                   end
+               end
+           end
+       end
+   end.
 
 Check s_execute.
-
 Example s_execute1 :
      s_execute empty_st []
        [SPush 5; SPush 3; SPush 1; SMinus]
    = [2; 5].
-(* FILL IN HERE *) Admitted.
+Proof.
+  simpl. reflexivity.
+Qed.
 
 Example s_execute2 :
      s_execute (X !-> 3) [3;4]
        [SPush 4; SLoad X; SMult; SPlus]
    = [15; 4].
-(* FILL IN HERE *) Admitted.
+Proof.
+  simpl. reflexivity.
+Qed.
 
 (** Next, write a function that compiles an [aexp] into a stack
     machine program. The effect of running the program should be the
