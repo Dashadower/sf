@@ -2349,7 +2349,11 @@ Theorem while_break_true : forall b c st st',
   beval st' b = true ->
   exists st'', st'' =[ c ]=> st' / SBreak.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros.
+  inversion H.
+    - subst. rewrite H0 in H4. inversion H4.
+    - subst. exists st. apply H5.
+    - subst. 
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ceval_deterministic) *)
