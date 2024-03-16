@@ -2270,45 +2270,77 @@ Reserved Notation "st '=[' c ']=>' st' '/' s"
     [ceval] relation. *)
 
 Inductive ceval : com -> state -> result -> state -> Prop :=
-  | E_Skip : forall st,
+  | E_Skip : ∀ st,
       st =[ CSkip ]=> st / SContinue
-  (* FILL IN HERE *)
+  | E_Break : forall st,
+      st =[ CBreak ]=> st / SBreak
+  | E_Asgn : forall st x a n,
+      aeval st a = n -> st =[CAsgn x a ]=> (x !->n; st) / SContinue
+  | E_SeqBreak : forall c1 c2 st st',
+      st =[ c1 ]=> st' / SBreak -> st =[ CSeq c1 c2 ]=> st' / SBreak
+  | E_Seq : forall c1 c2 st st' st'' res,
+      st =[ c1 ]=> st' / SContinue -> st' =[ c2 ]=> st'' / res -> st =[ CSeq c1 c2 ]=> st'' / res
+  | E_IfTrue : forall st st' b c1 c2 res,
+      beval st b = true -> st =[ c1 ]=> st' / res -> st =[ CIf b c1 c2 ]=> st' / res
+  | E_IfFalse : forall st st' b c1 c2 res,
+      beval st b = false -> st =[ c2 ]=> st' / res -> st =[ CIf b c1 c2 ]=> st' / res
+  | E_WhileFalse : forall b st c,
+      beval st b = false -> st =[ CWhile b c ]=> st / SContinue
+  | E_WhileTrueBreak : forall b st st' c,
+      beval st b = true -> st =[ c ]=> st' / SBreak ->
+      st =[CWhile b c]=> st' / SContinue
+  | E_WhileTrue : forall b st st' st'' c,
+      beval st b = true -> st =[ c ]=> st' / SContinue -> st' =[CWhile b c]=> st'' / SContinue ->
+      st =[CWhile b c]=> st'' / SContinue
 
   where "st '=[' c ']=>' st' '/' s" := (ceval c st s st').
 
 (** Now prove the following properties of your definition of [ceval]: *)
 
-Theorem break_ignore : forall c st st' s,
+Theorem break_ignore : ∀ c st st' s,
      st =[ break; c ]=> st' / s ->
      st = st'.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-Theorem while_continue : forall b c st st' s,
+  intros. inversion H. subst. inversion H5. reflexivity. subst. inversion H2.
+Qed.
+  
+Theorem while_continue : ∀ b c st st' s,
   st =[ while b do c end ]=> st' / s ->
   s = SContinue.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  inversion H. subst. all: reflexivity.
+Qed.
 
-Theorem while_stops_on_break : forall b c st st',
+Theorem while_stops_on_break : ∀ b c st st',
   beval st b = true ->
   st =[ c ]=> st' / SBreak ->
   st =[ while b do c end ]=> st' / SContinue.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct (beval st b) eqn:Eqbval.
+    - apply E_WhileTrueBreak with (st' := st').
+      apply Eqbval. apply H0.
+    - inversion H.
+Qed.
 
-Theorem seq_continue : forall c1 c2 st st' st'',
+Theorem seq_continue : ∀ c1 c2 st st' st'',
   st =[ c1 ]=> st' / SContinue ->
   st' =[ c2 ]=> st'' / SContinue ->
   st =[ c1 ; c2 ]=> st'' / SContinue.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply E_Seq with (st' := st').
+  apply H. apply H0.
+Qed.
 
-Theorem seq_stops_on_break : forall c1 c2 st st',
+Theorem seq_stops_on_break : ∀ c1 c2 st st',
   st =[ c1 ]=> st' / SBreak ->
   st =[ c1 ; c2 ]=> st' / SBreak.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply E_SeqBreak. apply H.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (while_break_true) *)
