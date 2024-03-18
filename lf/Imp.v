@@ -2290,7 +2290,7 @@ Inductive ceval : com -> state -> result -> state -> Prop :=
       beval st b = true -> st =[ c ]=> st' / SBreak ->
       st =[CWhile b c]=> st' / SContinue
   | E_WhileTrue : forall b st st' st'' c,
-      beval st b = true -> st =[ c ]=> st' / SContinue -> st' =[CWhile b c]=> st'' / SContinue ->
+      beval st b = true -> st =[ c ]=> st' / SContinue -> st' =[CWhile b c]=> st'' / SBreak ->
       st =[CWhile b c]=> st'' / SContinue
 
   where "st '=[' c ']=>' st' '/' s" := (ceval c st s st').
@@ -2351,18 +2351,38 @@ Theorem while_break_true : forall b c st st',
 Proof.
   intros.
   inversion H.
-    - subst. rewrite H0 in H4. inversion H4.
-    - subst. exists st. apply H5.
-    - subst. 
+    - subst. intros. rewrite H0 in H4. inversion H4.
+    - intros. subst. exists st. apply H5.
+    - intros. subst. inversion H6.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ceval_deterministic) *)
-Theorem ceval_deterministic: forall (c:com) st st1 st2 s1 s2,
+Lemma seq_stops_on_second_break : ∀ c1 c2 st st' st'',
+  st =[ c1 ]=> st' / SContinue ->
+  st' =[ c2 ]=> st'' / SBreak ->
+  st =[ c1 ; c2 ]=> st'' / SBreak.
+Proof.
+  intros.
+  apply E_Seq with (st' := st').
+  apply H. apply H0.
+Qed.
+
+Theorem ceval_deterministic: ∀ (c:com) st st1 st2 s1 s2,
      st =[ c ]=> st1 / s1 ->
      st =[ c ]=> st2 / s2 ->
      st1 = st2 /\ s1 = s2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros c.
+  induction c; try (intros; inversion H; inversion H0; subst; split;reflexivity).
+    - intros. inversion H. subst.
+    
+    (* WIP *)
+    - intros. inversion H. subst. apply IHc1 with (st1 := st2)(s1 := SBreak) in H6 as H7.
+      inversion H0. subst. destruct H7. split. symmetry. apply H1. reflexivity.
+      
+      subst. 
+    
 
 (** [] *)
 End BreakImp.
