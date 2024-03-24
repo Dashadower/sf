@@ -185,7 +185,7 @@ Proof. reflexivity. Qed.
 
     First, the empty map returns its default element for all keys: *)
 
-Lemma t_apply_empty : ∀ (A : Type) (x : string) (v : A),
+Lemma t_apply_empty : forall (A : Type) (x : string) (v : A),
   (_ !-> v) x = v.
 Proof.
   intros A x v.
@@ -199,7 +199,7 @@ Qed.
     and then look up [x] in the map resulting from the [update], we
     get back [v]: *)
 
-Lemma t_update_eq : ∀ (A : Type) (m : total_map A) x v,
+Lemma t_update_eq : forall (A : Type) (m : total_map A) x v,
   (x !-> v ; m) x = v.
 Proof.
   intros A m x v.
@@ -215,7 +215,7 @@ Qed.
     look up a _different_ key [x2] in the resulting map, we get the
     same result that [m] would have given: *)
 
-Theorem t_update_neq : ∀ (A : Type) (m : total_map A) x1 x2 v,
+Theorem t_update_neq : forall (A : Type) (m : total_map A) x1 x2 v,
   x1 <> x2 ->
   (x1 !-> v ; m) x2 = m x2.
 Proof.
@@ -234,7 +234,7 @@ Qed.
     to any key) as the simpler map obtained by performing just
     the second [update] on [m]: *)
 
-Lemma t_update_shadow : ∀ (A : Type) (m : total_map A) x v1 v2,
+Lemma t_update_shadow : forall (A : Type) (m : total_map A) x v1 v2,
   (x !-> v2 ; x !-> v1 ; m) = (x !-> v2 ; m).
 Proof.
   intros A m x v1 v2.
@@ -258,7 +258,7 @@ Qed.
     that if we update a map to assign key [x] the same value as it
     already has in [m], then the result is equal to [m]: *)
 
-Theorem t_update_same : ∀ (A : Type) (m : total_map A) x,
+Theorem t_update_same : forall (A : Type) (m : total_map A) x,
   (x !-> m x ; m) = m.
 Proof.
   intros A m x.
@@ -277,7 +277,7 @@ Qed.
     the [update] function: If we update a map [m] at two distinct
     keys, it doesn't matter in which order we do the updates. *)
 
-Theorem t_update_permute : ∀ (A : Type) (m : total_map A)
+Theorem t_update_permute : forall (A : Type) (m : total_map A)
                                   v1 v2 x1 x2,
   x2 <> x1 ->
   (x1 !-> v1 ; x2 !-> v2 ; m)

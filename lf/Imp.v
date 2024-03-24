@@ -473,7 +473,7 @@ Fixpoint optimize_0plus_b (b : bexp) : bexp :=
     | _ => b
   end.
 
-Theorem optimize_0plus_b_sound : ∀ b,
+Theorem optimize_0plus_b_sound : forall b,
   beval (optimize_0plus_b b) = beval b.
 Proof.
   intros.
@@ -950,7 +950,7 @@ Inductive bevalR: bexp -> bool -> Prop :=
 where "e '==>b' b" := (bevalR e b) : type_scope
 .
 
-Lemma beval_iff_bevalR : ∀ b bv,
+Lemma beval_iff_bevalR : forall b bv,
   b ==>b bv <-> beval b = bv.
 Proof.
   intros b.
@@ -1869,7 +1869,7 @@ Inductive no_whilesR: com -> Prop :=
 .
 
 Theorem no_whiles_eqv:
-  ∀ c, no_whiles c = true <-> no_whilesR c.
+  forall c, no_whiles c = true <-> no_whilesR c.
 Proof.
   intros.
   split.
@@ -2058,7 +2058,7 @@ Qed.
     the resulting stack, and executing [p2] from that stack. Prove
     that fact. *)
 
-Theorem execute_app : ∀ st p1 p2 stack,
+Theorem execute_app : forall st p1 p2 stack,
   s_execute st stack (p1 ++ p2) = s_execute st (s_execute st stack p1) p2.
 Proof.
   intros st p1.
@@ -2107,7 +2107,7 @@ Proof.
       reflexivity.
 Qed.
 
-Lemma s_compile_correct_aux : ∀ st e stack,
+Lemma s_compile_correct_aux : forall st e stack,
   s_execute st stack (s_compile e) = aeval st e :: stack.
 Proof.
   intros st e.
@@ -2122,7 +2122,7 @@ Qed.
 
 (** The main theorem should be a very easy corollary of that lemma. *)
 
-Theorem s_compile_correct : ∀ (st : state) (e : aexp),
+Theorem s_compile_correct : forall (st : state) (e : aexp),
   s_execute st [] (s_compile e) = [ aeval st e ].
 Proof.
   intros.
@@ -2270,7 +2270,7 @@ Reserved Notation "st '=[' c ']=>' st' '/' s"
     [ceval] relation. *)
 
 Inductive ceval : com -> state -> result -> state -> Prop :=
-  | E_Skip : ∀ st,
+  | E_Skip : forall st,
       st =[ CSkip ]=> st / SContinue
   | E_Break : forall st,
       st =[ CBreak ]=> st / SBreak
@@ -2297,14 +2297,14 @@ Inductive ceval : com -> state -> result -> state -> Prop :=
 
 (** Now prove the following properties of your definition of [ceval]: *)
 
-Theorem break_ignore : ∀ c st st' s,
+Theorem break_ignore : forall c st st' s,
      st =[ break; c ]=> st' / s ->
      st = st'.
 Proof.
   intros. inversion H. subst. inversion H5. reflexivity. subst. inversion H2.
 Qed.
   
-Theorem while_continue : ∀ b c st st' s,
+Theorem while_continue : forall b c st st' s,
   st =[ while b do c end ]=> st' / s ->
   s = SContinue.
 Proof.
@@ -2312,7 +2312,7 @@ Proof.
   inversion H. subst. all: reflexivity.
 Qed.
 
-Theorem while_stops_on_break : ∀ b c st st',
+Theorem while_stops_on_break : forall b c st st',
   beval st b = true ->
   st =[ c ]=> st' / SBreak ->
   st =[ while b do c end ]=> st' / SContinue.
@@ -2324,7 +2324,7 @@ Proof.
     - inversion H.
 Qed.
 
-Theorem seq_continue : ∀ c1 c2 st st' st'',
+Theorem seq_continue : forall c1 c2 st st' st'',
   st =[ c1 ]=> st' / SContinue ->
   st' =[ c2 ]=> st'' / SContinue ->
   st =[ c1 ; c2 ]=> st'' / SContinue.
@@ -2334,7 +2334,7 @@ Proof.
   apply H. apply H0.
 Qed.
 
-Theorem seq_stops_on_break : ∀ c1 c2 st st',
+Theorem seq_stops_on_break : forall c1 c2 st st',
   st =[ c1 ]=> st' / SBreak ->
   st =[ c1 ; c2 ]=> st' / SBreak.
 Proof.
@@ -2358,7 +2358,7 @@ Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ceval_deterministic) *)
-Lemma seq_stops_on_second_break : ∀ c1 c2 st st' st'',
+Lemma seq_stops_on_second_break : forall c1 c2 st st' st'',
   st =[ c1 ]=> st' / SContinue ->
   st' =[ c2 ]=> st'' / SBreak ->
   st =[ c1 ; c2 ]=> st'' / SBreak.
@@ -2368,7 +2368,7 @@ Proof.
   apply H. apply H0.
 Qed.
 
-Theorem ceval_deterministic: ∀ (c:com) st st1 st2 s1 s2,
+Theorem ceval_deterministic: forall (c:com) st st1 st2 s1 s2,
      st =[ c ]=> st1 / s1 ->
      st =[ c ]=> st2 / s2 ->
      st1 = st2 /\ s1 = s2.

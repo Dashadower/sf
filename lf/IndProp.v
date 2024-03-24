@@ -2828,7 +2828,7 @@ Definition manual_grade_for_NoDup_disjoint_etc : option (nat*string) := None.
 
 (** First prove an easy and useful lemma. *)
 
-Lemma in_split : ∀ (X:Type) (x:X) (l:list X),
+Lemma in_split : forall (X:Type) (x:X) (l:list X),
   In x l ->
   exists l1 l2, l = l1 ++ x :: l2.
 Proof.
@@ -2865,8 +2865,8 @@ Definition manual_grade_for_check_repeats : option (nat*string) := None.
     manage to do this, you will not need the [excluded_middle]
     hypothesis. *)
 Theorem pigeonhole_principle: excluded_middle ->
-  ∀ (X:Type) (l1  l2:list X),
-  (∀ x, In x l1 -> In x l2) ->
+  forall (X:Type) (l1  l2:list X),
+  (forall x, In x l1 -> In x l2) ->
   length l2 < length l1 ->
   repeats l1.
 Proof.
