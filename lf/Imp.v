@@ -552,7 +552,7 @@ Proof.
       + simpl in *. rewrite IHa2. rewrite IHa1. reflexivity.
       + simpl in *. rewrite IHa1. rewrite IHa2. reflexivity.
       + simpl.
-      -
+Abort.
 
 (* ================================================================= *)
 (** ** Defining New Tactics *)
@@ -955,15 +955,18 @@ Lemma beval_iff_bevalR : forall b bv,
 Proof.
   intros b.
   induction b.
-    - split. intros. inversion H. simpl. reflexivity.
-      intros. inversion H. simpl. apply E_BTrue.
-    - split. intros. inversion H. simpl. reflexivity.
-      intros. inversion H. simpl. apply E_BFalse.
+    - split.
+      +  intros. inversion H. simpl. reflexivity.
+      + intros. inversion H. simpl. apply E_BTrue.
+    - split.
+      +  intros. inversion H. simpl. reflexivity.
+      + intros. inversion H. simpl. apply E_BFalse. 
     - split. 
         + intros. inversion H. clear H0 H1. simpl. apply aeval_iff_aevalR in H2.
           apply aeval_iff_aevalR in H4. subst. reflexivity.
-        + intros. simpl in *. rewrite <- H. apply E_BEq. apply aeval_iff_aevalR. reflexivity.
-          apply aeval_iff_aevalR. reflexivity.
+        + intros. simpl in *. rewrite <- H. apply E_BEq.
+            * apply aeval_iff_aevalR. reflexivity.
+            * apply aeval_iff_aevalR. reflexivity.     
     - split.
         + intros. inversion H. clear H0 H1. simpl. apply aeval_iff_aevalR in H2, H4.
           subst. reflexivity.
