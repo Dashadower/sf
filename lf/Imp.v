@@ -2394,9 +2394,54 @@ Proof.
                 ** destruct H9. discriminate H2.
                 ** apply H3.
         (* Case 2. c1 continues; c2 is executed *)
-        + 
-    
-
+        + subst. inversion H0.
+          * subst. apply IHc1 with (st1 := st')(s1 := SContinue) in H8 as H9.
+              ** destruct H9. discriminate H2.
+              ** apply H3.
+          * subst. apply IHc1 with (st1 := st')(st2 := st'0)(s2 := SContinue) in H3 as H10.
+            ** destruct H10. subst. apply IHc2 with (st := st'0)(st1 := st1)(s1 := s1)(st2 := st2)(s2 := s2) in H7.     
+               *** apply H7.
+               *** apply H9.
+            ** apply H4.
+    - intros. destruct (beval st b) eqn:Eqb.
+      + inversion H.
+        * subst. inversion H0.
+          ** subst. apply IHc1 with (st2 := st2) (s2 := s2) in H8.
+             *** apply H8.
+             *** apply H10.
+          ** subst. rewrite H7 in H9. discriminate H9.
+        * subst. rewrite H7 in Eqb. discriminate Eqb.
+      + inversion H.
+        * subst. inversion H0.
+          ** subst. apply IHc1 with (st2 := st2) (s2 := s2) in H8.
+             *** apply H8.
+             *** apply H10.
+          ** subst. rewrite H7 in H9. discriminate H9.
+        * subst. inversion H0.
+          ** subst. rewrite H7 in H9. discriminate H9.
+          ** subst. apply IHc2 with (st2 := st2)(s2 := s2) in H8.
+             *** apply H8.
+             *** apply H10.
+    - intros. destruct (beval st b) eqn:Eqb.
+      + inversion H.
+        * subst. rewrite Eqb in H6. discriminate H6.
+        * subst. inversion H0.
+          ** subst. rewrite Eqb in H8. discriminate H8.
+          ** subst. apply IHc with (st2 := st2)(s2 := SBreak) in H7.
+             *** split.
+                 **** destruct H7. apply H1.
+                 **** reflexivity.
+             *** apply H9.
+          ** subst. inversion H10.
+        * subst. inversion H8.
+      + inversion H.
+        * subst. inversion H0.
+          ** subst. split. all: reflexivity.
+          ** subst. rewrite H6 in H3. discriminate H3.
+          ** subst. rewrite H6 in H3. discriminate H3.
+        * subst. rewrite Eqb in H3. discriminate H3.
+        * subst. rewrite Eqb in H3. discriminate H3.
+Qed.
 (** [] *)
 End BreakImp.
 
