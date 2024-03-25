@@ -2373,20 +2373,28 @@ Proof.
   apply H. apply H0.
 Qed.
 
+(* Lemma seq_stops_then_second_norun : forall c1 c2 st st',
+  st =[ c1 ]=> st' / SBreak ->
+  st =[ c1 ; c2 ]=> st' / SBreak -> *)
+
 Theorem ceval_deterministic: forall (c:com) st st1 st2 s1 s2,
      st =[ c ]=> st1 / s1 ->
      st =[ c ]=> st2 / s2 ->
      st1 = st2 /\ s1 = s2.
 Proof.
   intros c.
-  induction c; try (intros; inversion H; inversion H0; subst; split;reflexivity).
-    - intros. inversion H. subst.
-    
-    (* WIP *)
-    - intros. inversion H. subst. apply IHc1 with (st1 := st2)(s1 := SBreak) in H6 as H7.
-      inversion H0. subst. destruct H7. split. symmetry. apply H1. reflexivity.
-      
-      subst. 
+  induction c; try (intros; inversion H; inversion H0; subst; split;reflexivity).  
+    - intros. inversion H.
+        (* Case 1. c1 breaks *)
+        + subst. inversion H0.
+            * subst. apply IHc1 with (st1 := st1)(s1 := SBreak) in H7.
+                ** apply H7.
+                ** apply H6.
+            * subst. apply IHc1 with (st2 := st')(s2 := SContinue) in H6 as H9.
+                ** destruct H9. discriminate H2.
+                ** apply H3.
+        (* Case 2. c1 continues; c2 is executed *)
+        + 
     
 
 (** [] *)
