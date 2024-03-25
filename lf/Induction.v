@@ -948,13 +948,24 @@ Proof. simpl. reflexivity. Qed.
     progress. We have one lemma for the [B0] case (which also makes 
     use of [double_incr_bin]) and another for the [B1] case. *)
 
+Lemma add_2bins_equals_nat : forall b,
+  nat_to_bin (b + b) = double_bin (nat_to_bin b).
+Proof.
+  intros.
+  induction b.
+    - simpl. reflexivity.
+    - simpl. rewrite add_comm. simpl. rewrite IHb. rewrite double_incr_bin.
+      reflexivity.
+Qed.
+
 Theorem bin_nat_bin : forall b, nat_to_bin (bin_to_nat b) = normalize b.
 Proof.
   intros b.
   induction b as [| b0' IHb0' | b1' IHb1'].
     - simpl. reflexivity.
-    - simpl.
-Admitted. (* HELP *)
+    - simpl. rewrite add_2bins_equals_nat. rewrite IHb0'. reflexivity.
+    - simpl. rewrite add_2bins_equals_nat. rewrite IHb1'.  
+Abort.
 
 (** [] *)
 
