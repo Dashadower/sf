@@ -30,7 +30,7 @@ From Coq Require Import Lia.
 From Coq Require Import Lists.List. Import ListNotations.
 From Coq Require Import Strings.String.
 From LF Require Import Maps.
-Set Default Goal Selector "!".
+(* Set Default Goal Selector "!".*)
 
 (* ################################################################# *)
 (** * Arithmetic and Boolean Expressions *)
@@ -1676,10 +1676,12 @@ Proof.
   apply E_Seq with (st' := X !-> 0).
   - apply E_Asgn. reflexivity.
   - apply E_Seq with (st' := Y !-> 1).
-    assert (H: (X !-> 0) = empty_st). unfold empty_st. apply t_update_same.
-    rewrite H. apply E_Asgn. reflexivity.
-    assert (H: (X !-> 0) = empty_st). unfold empty_st. apply t_update_same.
-    rewrite H. apply E_Asgn. reflexivity.
+      + assert (H: (X !-> 0) = empty_st).
+        * unfold empty_st. apply t_update_same.
+        * rewrite H. apply E_Asgn. reflexivity.
+      + assert (H: (X !-> 0) = empty_st).
+        * unfold empty_st. apply t_update_same.
+        * rewrite H. apply E_Asgn. reflexivity. 
 Qed.
 (** [] *)
 
