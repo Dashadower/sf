@@ -2460,8 +2460,99 @@ End BreakImp.
     about making up a concrete Notation for [for] loops, but feel free
     to play with this too if you like.) *)
 
-(* FILL IN HERE
 
-    [] *)
+Module ForImp.
+
+(* Declare commands and its syntax *)
+
+Inductive com : Type :=
+  | CSkip
+  | CBreak                        
+  | CAsgn (x : string) (a : aexp)
+  | CSeq (c1 c2 : com)
+  | CIf (b : bexp) (c1 c2 : com)
+  | CWhile (b : bexp) (c : com)
+  | CFor (b_test : bexp) (c_init c_end c_body : com).
+
+Notation "'break'" := CBreak (in custom com at level 0).
+Notation "'skip'"  :=
+         CSkip (in custom com at level 0) : com_scope.
+Notation "x := y"  :=
+         (CAsgn x y)
+            (in custom com at level 0, x constr at level 0,
+             y at level 85, no associativity) : com_scope.
+Notation "x ; y" :=
+         (CSeq x y)
+           (in custom com at level 90, right associativity) : com_scope.
+Notation "'if' x 'then' y 'else' z 'end'" :=
+         (CIf x y z)
+           (in custom com at level 89, x at level 99,
+            y at level 99, z at level 99) : com_scope.
+Notation "'while' x 'do' y 'end'" :=
+         (CWhile x y)
+            (in custom com at level 89, x at level 99, y at level 99) : com_scope.
+Notation "'for' '(' c_init '\' b_test '\' c_end ')' 'do' c_body 'end'" :=
+         (CFor b_test c_init c_end c_body)
+            (in custom com at level 89, b_test at level 99, c_init at level 99,
+            c_end at level 99, c_body at level 99) : com_scope.
+
+(* First we test the notation *)
+
+Example for_1 : com := 
+<{
+Y := 10;
+W := 0;`
+for ( X := 0 \ X <= Y \ X := X + 1 ) do
+  W := W + X
+end
+}>.
+
+Unset Printing Notations.
+Print for_1.
+Set Printing Notations.
+
+(* Now we declare the "break result" of a command evaluation  *)
+
+Inductive result : Type :=
+  | SContinue
+  | SBreak.
+
+Reserved Notation "st '=[' c ']=>' st' '/' s"
+     (at level 40, c custom com at level 99, st' constr at next level).
+
+Inductive ceval : com -> state -> result -> state -> Prop :=
+  | E_Skip : forall st,
+      st =[ CSkip ]=> st / SContinue
+  | E_Break : forall st,
+      st =[ CBreak ]=> st / SBreak
+  | E_Asgn : forall st x a n,
+      aeval st a = n -> st =[CAsgn x a ]=> (x !->n; st) / SContinue
+  | E_SeqBreak : forall c1 c2 st st',
+      st =[ c1 ]=> st' / SBreak -> st =[ CSeq c1 c2 ]=> st' / SBreak
+  | E_Seq : forall c1 c2 st st' st'' res,
+      st =[ c1 ]=> st' / SContinue -> st' =[ c2 ]=> st'' / res -> st =[ CSeq c1 c2 ]=> st'' / res
+  | E_IfTrue : forall st st' b c1 c2 res,
+      beval st b = true -> st =[ c1 ]=> st' / res -> st =[ CIf b c1 c2 ]=> st' / res
+  | E_IfFalse : forall st st' b c1 c2 res,
+      beval st b = false -> st =[ c2 ]=> st' / res -> st =[ CIf b c1 c2 ]=> st' / res
+  | E_WhileFalse : forall b st c,
+      beval st b = false -> st =[ CWhile b c ]=> st / SContinue
+  | E_WhileTrueBreak : forall b st st' c,
+      beval st b = true -> st =[ c ]=> st' / SBreak ->
+      st =[CWhile b c]=> st' / SContinue
+  | E_WhileTrue : forall b st st' st'' c,
+      beval st b = true -> st =[ c ]=> st' / SContinue -> st' =[CWhile b c]=> st'' / SBreak ->
+      st =[CWhile b c]=> st'' / SContinue
+  | E_ForFalse : forall b_test st st' res c_init c_end c_body,
+      st =[ c_init ]=> st' / res ->
+      beval st' b_test = false ->
+      st =[ CFor b_test c_init c_end c_body ]=> st' / res
+  | E_ForTrue : forall b_test st st' res c_init c_end c_body,
+      st =[ c_init ]=> st' / res ->
+      beval st' b_test = true ->
+
+  where "st '=[' c ']=>' st' '/' s" := (ceval c st s st').
+
+End ForImp.
 
 (* 2023-08-23 11:29 *)
