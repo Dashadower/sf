@@ -2501,7 +2501,7 @@ Notation "'for' '(' c_init '\' b_test '\' c_end ')' 'do' c_body 'end'" :=
 Example for_1 : com := 
 <{
 Y := 10;
-W := 0;`
+W := 0;
 for ( X := 0 \ X <= Y \ X := X + 1 ) do
   W := W + X
 end
