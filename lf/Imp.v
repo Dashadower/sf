@@ -2496,21 +2496,6 @@ Notation "'for' '(' c_init '\' b_test '\' c_end ')' 'do' c_body 'end'" :=
             (in custom com at level 89, b_test at level 99, c_init at level 99,
             c_end at level 99, c_body at level 99) : com_scope.
 
-(* First we test the notation *)
-
-Example for_1 : com := 
-<{
-Y := 10;
-W := 0;
-for ( X := 0 \ X <= Y \ X := X + 1 ) do
-  W := W + X
-end
-}>.
-
-Unset Printing Notations.
-Print for_1.
-Set Printing Notations.
-
 (* Now we declare the "break result" of a command evaluation  *)
 
 Inductive result : Type :=
@@ -2541,17 +2526,152 @@ Inductive ceval : com -> state -> result -> state -> Prop :=
       beval st b = true -> st =[ c ]=> st' / SBreak ->
       st =[CWhile b c]=> st' / SContinue
   | E_WhileTrue : forall b st st' st'' c,
-      beval st b = true -> st =[ c ]=> st' / SContinue -> st' =[CWhile b c]=> st'' / SBreak ->
+      beval st b = true ->
+      st =[ c ]=> st' / SContinue ->
+      st' =[CWhile b c]=> st'' / SBreak ->
       st =[CWhile b c]=> st'' / SContinue
-  | E_ForFalse : forall b_test st st' res c_init c_end c_body,
+  | E_ForInitBreak : forall b_test st st' c_init c_end c_body,
+      st =[ c_init ]=> st' / SBreak -> 
+      st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
+  | E_ForEqualsWhile : forall b_test st st' c_init c_end c_body,
+      st =[CSeq c_init (CWhile b_test (CSeq c_body c_end)) ]=> st' / SContinue ->
+      st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
+
+
+  (* My failed attempt for defining operational semantics for c-style for loops.
+     I just defaulted to desugaring for loops to while loops *)
+  (* | E_ForFalse : forall b_test st st' res c_init c_end c_body,
       st =[ c_init ]=> st' / res ->
       beval st' b_test = false ->
       st =[ CFor b_test c_init c_end c_body ]=> st' / res
-  | E_ForTrue : forall b_test st st' res c_init c_end c_body,
-      st =[ c_init ]=> st' / res ->
+  | E_ForInitBreak : forall b_test st st' c_init c_end c_body,
+      st =[ c_init ]=> st' / SBreak -> 
+      beval st b_test = true ->
+      st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
+  | E_ForFalse : forall b_test st st' st'' c_init c_end c_body,
+      st =[ c_init ]=> st' / SContinue -> 
+      beval st' b_test = false ->
+      st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
+  | E_ForTrueBreaks : forall b_test st st' st'' c_init c_end c_body,
+      st =[ c_init ]=> st' / SContinue -> 
       beval st' b_test = true ->
+  | E_ForTrueContinue : forall b_test st st' st'' st''' st'''' c_init c_end c_body,
+      beval st b_test = true ->
+      st =[ c_init ]=> st' / SContinue -> 
+      st' =[ c_body ]=> st'' / SContinue ->
+      st'' =[ c_end ]=> st''' / SContinue ->
+      st''' =[ CFor b_test c_init c_end c_body ]=> st'''' / SBreak ->
+      st =[ CFor b_test c_init c_end c_body ]=> st'''' / SContinue *)
+      
 
   where "st '=[' c ']=>' st' '/' s" := (ceval c st s st').
+
+
+(* First we test the notation *)
+
+Print ceval.
+
+Example for_1 : com := 
+<{
+Y := 10;
+W := 0;
+for ( X := 0 \ X <= Y \ X := X + 1 ) do
+  W := W + X
+end
+}>.
+
+Unset Printing Notations.
+Print for_1.
+Set Printing Notations.
+
+Locate "=[".
+
+Example for_1_proof :
+  empty_st =[
+    for_1
+  ]=> (X !-> 10 ; Y !-> 10 ; W !-> 55) / SContinue.
+Proof.
+  unfold for_1.
+  apply E_Seq with (st' := (Y !-> 10)).
+  (* Y := 10 *)
+  apply E_Asgn. simpl. reflexivity.
+  (* W := 0 *)
+  apply E_Seq with (st' := (W !-> 0 ; Y !->10 )).
+  apply E_Asgn. simpl. reflexivity.
+  (* desugar for into while *)
+  apply E_ForEqualsWhile.
+
+  apply E_Seq with (st' := (X !-> 0 ; W !-> 0; Y !-> 10)).
+  { (* X := 0 *)
+    apply E_Asgn. simpl. reflexivity.
+  }
+  apply E_WhileTrue with (st' := (X !-> 1; W !-> 0; Y !-> 10)).
+  {
+    simpl. reflexivity.
+  }
+  {
+    apply E_Seq with (st' := (W !-> 0; Y !-> 10)).
+      {
+        rewrite t_update_permute. rewrite t_update_same with (m := (X !-> 0; Y !-> 10)).
+        rewrite t_update_same. apply E_Asgn. simpl. reflexivity.
+
+        unfold not. intros. discriminate H.  
+      }
+      {
+        apply E_Asgn. simpl. reflexivity.
+      }
+  }
+  (* X = 1 *)
+  apply E_WhileTrue with (st' := (X !-> 2; W !-> 0; Y !-> 10)).
+  {
+    simpl. reflexivity.
+  }
+  {
+    apply E_Seq with (st' := (W !-> 1; Y !-> 10)).
+      {
+        rewrite t_update_permute. rewrite t_update_same with (m := (X !-> 1; Y !-> 10)).
+        rewrite t_update_same. apply E_Asgn. simpl. reflexivity.
+
+        unfold not. intros. discriminate H.  
+      }
+      {
+        apply E_Asgn. simpl. reflexivity.
+      }
+  }
+
+  (* apply E_ForTrueContinue with (st' := (X !-> 0 ; W !-> 0 ; Y !->10 )) (st'' := (W !-> 0 ; Y !->10 )) (st''' := (X !-> 1 ; W !-> 0 ; Y !->10 )).
+    { (* b_test *)
+      simpl. reflexivity.
+    }
+    { (* c_init *)
+      rewrite t_update_same. apply E_Asgn. simpl. reflexivity.
+    }
+    { (* c_body *)
+      rewrite t_update_same with (x := W). rewrite t_update_same with (x := X). rewrite <- t_update_same with (x := W). apply E_Asgn with (st := (Y !-> 10)).
+      simpl. reflexivity.
+    }
+    { (* c_end *)
+      apply E_Asgn. simpl. reflexivity.
+    }
+
+  (* for loop 2 *)
+  apply E_ForTrueContinue with (st' := (X !-> 1 ; W !-> 0 ; Y !->10 )) (st'' := (W !-> 1 ; Y !->10 )) (st''' := (X !-> 2 ; W !-> 1 ; Y !->10 )).
+    { (* b_test *)
+      simpl. reflexivity.
+    }
+    { (* c_init *)
+      rewrite t_update_same. apply E_Asgn. simpl. reflexivity.
+    }
+    { (* c_body *)
+      rewrite t_update_same with (x := W). rewrite t_update_same with (x := X). rewrite <- t_update_same with (x := W). apply E_Asgn with (st := (Y !-> 10)).
+      simpl. reflexivity.
+    }
+    { (* c_end *)
+      apply E_Asgn. simpl. reflexivity.
+    } *)
+
+  
+Qed.
 
 End ForImp.
 
