@@ -2621,6 +2621,9 @@ Proof.
         apply E_Asgn. simpl. reflexivity.
       }
   }
+  {
+    apply E_WhileTrueBreak.
+  }
   (* X = 1 *)
   apply E_WhileTrue with (st' := (X !-> 2; W !-> 0; Y !-> 10)).
   {
