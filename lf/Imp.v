@@ -2528,7 +2528,7 @@ Inductive ceval : com -> state -> result -> state -> Prop :=
   | E_WhileTrue : forall b st st' st'' c,
       beval st b = true ->
       st =[ c ]=> st' / SContinue ->
-      st' =[CWhile b c]=> st'' / SBreak ->
+      st' =[CWhile b c]=> st'' / SContinue ->
       st =[CWhile b c]=> st'' / SContinue
   | E_ForInitBreak : forall b_test st st' c_init c_end c_body,
       st =[ c_init ]=> st' / SBreak -> 
@@ -2589,7 +2589,7 @@ Locate "=[".
 Example for_1_proof :
   empty_st =[
     for_1
-  ]=> (X !-> 10 ; Y !-> 10 ; W !-> 55) / SContinue.
+  ]=> (X !-> 11 ; Y !-> 10 ; W !-> 55) / SContinue.
 Proof.
   unfold for_1.
   apply E_Seq with (st' := (Y !-> 10)).
@@ -2622,58 +2622,312 @@ Proof.
       }
   }
   {
-    apply E_WhileTrueBreak.
-  }
   (* X = 1 *)
-  apply E_WhileTrue with (st' := (X !-> 2; W !-> 0; Y !-> 10)).
-  {
+  apply E_WhileTrue with (st' := (X !-> 2; W !-> 1; Y !-> 10)).
+  { (*show loop cond is true *)
     simpl. reflexivity.
   }
-  {
-    apply E_Seq with (st' := (W !-> 1; Y !-> 10)).
+  { (* show loop body executes with state SContinue *)
+    apply E_Seq with (st' := (W !-> 1; X !-> 1; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. rewrite t_update_same with (m := (X !-> 1; Y !-> 10)).
+      apply E_Asgn. simpl.  reflexivity.
       {
-        rewrite t_update_permute. rewrite t_update_same with (m := (X !-> 1; Y !-> 10)).
-        rewrite t_update_same. apply E_Asgn. simpl. reflexivity.
-
-        unfold not. intros. discriminate H.  
+        unfold not. intros. discriminate H.
       }
-      {
-        apply E_Asgn. simpl. reflexivity.
-      }
+    }
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 1) (v2 := 2).
+          apply E_Asgn with (st := (X !-> 1; W !-> 1; Y !-> 10)).
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
+    }
   }
 
-  (* apply E_ForTrueContinue with (st' := (X !-> 0 ; W !-> 0 ; Y !->10 )) (st'' := (W !-> 0 ; Y !->10 )) (st''' := (X !-> 1 ; W !-> 0 ; Y !->10 )).
-    { (* b_test *)
-      simpl. reflexivity.
+  { (* X = 2 *)
+  apply E_WhileTrue with (st' := (X !-> 3; W !-> 3; Y !-> 10)).
+    { (*show loop cond is true *)
+    simpl. reflexivity.
     }
-    { (* c_init *)
-      rewrite t_update_same. apply E_Asgn. simpl. reflexivity.
+    { (* show loop body executes with state SContinue *)
+      apply E_Seq with (st' := (W !-> 3; X !-> 2; Y !-> 10)).
+      { (* W = W + X *)
+        rewrite t_update_permute. 
+        rewrite <- t_update_shadow with (x := W) (v1:= 1) (v2 := 3).
+        apply E_Asgn. simpl.  reflexivity.
+        {
+          unfold not. intros. discriminate H.
+        }
+      }
+      { (* x = x + 1 *)
+        rewrite t_update_permute. 
+          {
+            rewrite <- t_update_shadow with (x := X) (v1:= 2) (v2 := 3).
+            apply E_Asgn.
+            simpl. reflexivity.
+          }
+          {
+            unfold not. intros. discriminate H.
+          }
+      }
     }
-    { (* c_body *)
-      rewrite t_update_same with (x := W). rewrite t_update_same with (x := X). rewrite <- t_update_same with (x := W). apply E_Asgn with (st := (Y !-> 10)).
-      simpl. reflexivity.
+  { (* X = 3 *)
+  apply E_WhileTrue with (st' := (X !-> 4; W !-> 6; Y !-> 10)).
+  { (*show loop cond is true *)
+    simpl. reflexivity.
+  }
+  { (* show loop body executes with state SContinue *)
+    (* first command of seq adds X to W. st' should be the state where X is added to W*)
+    apply E_Seq with (st' := (W !-> 6; X !-> 3; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. 
+      rewrite <- t_update_shadow with (x := W) (v1:= 3) (v2 := 6).
+      apply E_Asgn. simpl.  reflexivity.
+      {
+        unfold not. intros. discriminate H.
+      }
     }
-    { (* c_end *)
-      apply E_Asgn. simpl. reflexivity.
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 3) (v2 := 4).
+          apply E_Asgn.
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
     }
+  }
+  { (* X = 4 *)
+  (* st' for E_WhileTrue should be state where W += X; X += 1*)
+  apply E_WhileTrue with (st' := (X !-> 5; W !-> 10; Y !-> 10)).
+  { (*show loop cond is true *)
+    simpl. reflexivity.
+  }
+  { (* show loop body executes with state SContinue *)
+    (* first command of seq adds X to W. st' should be the state where X is added to W*)
+    apply E_Seq with (st' := (W !-> 10; X !-> 4; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. 
+      rewrite <- t_update_shadow with (x := W) (v1:= 6) (v2 := 10).
+      apply E_Asgn. simpl.  reflexivity.
+      {
+        unfold not. intros. discriminate H.
+      }
+    }
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 4) (v2 := 5).
+          apply E_Asgn.
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
+    }
+  }
+  {
+  { (* X = 5 *)
+  (* st' for E_WhileTrue should be state where W += X; X += 1*)
+  apply E_WhileTrue with (st' := (X !-> 6; W !-> 15; Y !-> 10)).
+  { (*show loop cond is true *)
+    simpl. reflexivity.
+  }
+  { (* show loop body executes with state SContinue *)
+    (* first command of seq adds X to W. st' should be the state where X is added to W*)
+    apply E_Seq with (st' := (W !-> 15; X !-> 5; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. 
+      rewrite <- t_update_shadow with (x := W) (v1:= 10) (v2 := 15).
+      apply E_Asgn. simpl.  reflexivity.
+      {
+        unfold not. intros. discriminate H.
+      }
+    }
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 5) (v2 := 6).
+          apply E_Asgn.
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
+    }
+  }
+  { (* X = 6 *)
+  (* st' for E_WhileTrue should be state where W += X; X += 1*)
+  apply E_WhileTrue with (st' := (X !-> 7; W !-> 21; Y !-> 10)).
+  { (*show loop cond is true *)
+    simpl. reflexivity.
+  }
+  { (* show loop body executes with state SContinue *)
+    (* first command of seq adds X to W. st' should be the state where X is added to W*)
+    apply E_Seq with (st' := (W !-> 21; X !-> 6; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. 
+      rewrite <- t_update_shadow with (x := W) (v1:= 15) (v2 := 21).
+      apply E_Asgn. simpl.  reflexivity.
+      {
+        unfold not. intros. discriminate H.
+      }
+    }
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 6) (v2 := 7).
+          apply E_Asgn.
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
+    }
+  }
+  { (* X = 7 *)
+  (* st' for E_WhileTrue should be state where W += X; X += 1*)
+  apply E_WhileTrue with (st' := (X !-> 8; W !-> 28; Y !-> 10)).
+  { (*show loop cond is true *)
+    simpl. reflexivity.
+  }
+  { (* show loop body executes with state SContinue *)
+    (* first command of seq adds X to W. st' should be the state where X is added to W*)
+    apply E_Seq with (st' := (W !-> 28; X !-> 7; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. 
+      rewrite <- t_update_shadow with (x := W) (v1:= 21) (v2 := 28).
+      apply E_Asgn. simpl.  reflexivity.
+      {
+        unfold not. intros. discriminate H.
+      }
+    }
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 7) (v2 := 8).
+          apply E_Asgn.
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
+    }
+  }
+  { (* X = 8 *)
+  (* st' for E_WhileTrue should be state where W += X; X += 1*)
+  apply E_WhileTrue with (st' := (X !-> 9; W !-> 36; Y !-> 10)).
+  { (*show loop cond is true *)
+    simpl. reflexivity.
+  }
+  { (* show loop body executes with state SContinue *)
+    (* first command of seq adds X to W. st' should be the state where X is added to W*)
+    apply E_Seq with (st' := (W !-> 36; X !-> 8; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. 
+      rewrite <- t_update_shadow with (x := W) (v1:= 28) (v2 := 36).
+      apply E_Asgn. simpl.  reflexivity.
+      {
+        unfold not. intros. discriminate H.
+      }
+    }
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 8) (v2 := 9).
+          apply E_Asgn.
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
+    }
+  }
+  { (* X = 9 *)
+  (* st' for E_WhileTrue should be state where W += X; X += 1*)
+  apply E_WhileTrue with (st' := (X !-> 10; W !-> 45; Y !-> 10)).
+  { (*show loop cond is true *)
+    simpl. reflexivity.
+  }
+  { (* show loop body executes with state SContinue *)
+    (* first command of seq adds X to W. st' should be the state where X is added to W*)
+    apply E_Seq with (st' := (W !-> 45; X !-> 9; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. 
+      rewrite <- t_update_shadow with (x := W) (v1:= 36) (v2 := 45).
+      apply E_Asgn. simpl.  reflexivity.
+      {
+        unfold not. intros. discriminate H.
+      }
+    }
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 9) (v2 := 10).
+          apply E_Asgn.
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
+    }
+  }
+  { (* X = 10 *)
+  (* st' for E_WhileTrue should be state where W += X; X += 1*)
+  apply E_WhileTrue with (st' := (X !-> 11; W !-> 55; Y !-> 10)).
+  { (*show loop cond is true *)
+    simpl. reflexivity.
+  }
+  { (* show loop body executes with state SContinue *)
+    (* first command of seq adds X to W. st' should be the state where X is added to W*)
+    apply E_Seq with (st' := (W !-> 55; X !-> 10; Y !-> 10)).
+    { (* W = W + X *)
+      rewrite t_update_permute. 
+      rewrite <- t_update_shadow with (x := W) (v1:= 45) (v2 := 55).
+      apply E_Asgn. simpl.  reflexivity.
+      {
+        unfold not. intros. discriminate H.
+      }
+    }
+    { (* x = x + 1 *)
+      rewrite t_update_permute. 
+        {
+          rewrite <- t_update_shadow with (x := X) (v1:= 10) (v2 := 11).
+          apply E_Asgn.
+          simpl. reflexivity.
+        }
+        {
+          unfold not. intros. discriminate H.
+        }
+    }
+  }
+  { (* X = 11 *)
+  assert ((X !-> 11; W !-> 55; Y !-> 10) = (X !-> 11; Y !-> 10; W !->55 )). {
+    replace (W !-> 55; Y !-> 10) with ( Y !-> 10; W !-> 55). reflexivity.
+    rewrite t_update_permute. reflexivity. unfold not. intros. discriminate H.
+  }
+  rewrite H.
+  apply E_WhileFalse. simpl. reflexivity.
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
 
-  (* for loop 2 *)
-  apply E_ForTrueContinue with (st' := (X !-> 1 ; W !-> 0 ; Y !->10 )) (st'' := (W !-> 1 ; Y !->10 )) (st''' := (X !-> 2 ; W !-> 1 ; Y !->10 )).
-    { (* b_test *)
-      simpl. reflexivity.
-    }
-    { (* c_init *)
-      rewrite t_update_same. apply E_Asgn. simpl. reflexivity.
-    }
-    { (* c_body *)
-      rewrite t_update_same with (x := W). rewrite t_update_same with (x := X). rewrite <- t_update_same with (x := W). apply E_Asgn with (st := (Y !-> 10)).
-      simpl. reflexivity.
-    }
-    { (* c_end *)
-      apply E_Asgn. simpl. reflexivity.
-    } *)
-
-  
 Qed.
 
 End ForImp.
