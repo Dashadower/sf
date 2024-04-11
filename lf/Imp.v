@@ -2295,7 +2295,7 @@ Inductive ceval : com -> state -> result -> state -> Prop :=
       beval st b = true -> st =[ c ]=> st' / SBreak ->
       st =[CWhile b c]=> st' / SContinue
   | E_WhileTrue : forall b st st' st'' c,
-      beval st b = true -> st =[ c ]=> st' / SContinue -> st' =[CWhile b c]=> st'' / SBreak ->
+      beval st b = true -> st =[ c ]=> st' / SContinue -> st' =[CWhile b c]=> st'' / SContinue ->
       st =[CWhile b c]=> st'' / SContinue
 
   where "st '=[' c ']=>' st' '/' s" := (ceval c st s st').
@@ -2355,11 +2355,54 @@ Theorem while_break_true : forall b c st st',
   exists st'', st'' =[ c ]=> st' / SBreak.
 Proof.
   intros.
-  inversion H.
-    - subst. intros. rewrite H0 in H4. inversion H4.
-    - intros. subst. exists st. apply H5.
-    - intros. subst. inversion H6.
+  remember (<{while b do c end}>) as com eqn:Eqcom.
+  remember (SContinue) as res eqn:Eqres.
+  induction c.
+    - induction H; try inversion Eqcom.
+      + subst b0. rewrite H in H0. discriminate H0.
+      + inversion Eqcom. subst c. inversion H1.
+      + inversion Eqcom. subst b0. apply IHceval2. apply Eqcom. reflexivity. apply H0.
+    - exists st'. apply E_Break.
+    - induction H; try inversion Eqcom.
+      + subst b0. rewrite H in H0. discriminate H0.
+      + subst b0. rewrite H4 in *. inversion H1.
+      + subst b0. rewrite H5 in *. apply IHceval2. apply Eqcom. reflexivity. apply H0.
+    - induction H; try inversion Eqcom.
+      + subst b. rewrite H in H0. discriminate H0.
+      + subst b0. rewrite H4 in *. inversion H1.
+        * exists st. apply E_SeqBreak. apply H6.
+        * exists st. apply E_Seq with (st' := st'0). apply H5. apply H9.
+      + subst b0. rewrite H5 in *. apply IHceval2. reflexivity. reflexivity.
+        apply H0. apply IHc1. apply IHc2.
+    - induction H; try inversion Eqcom.
+      + subst b1. rewrite H in H0. inversion H0.
+      + subst b1. rewrite H4 in *. inversion H1.
+        * subst. exists st. apply H1.
+        * subst. exists st. apply H1.
+      + subst b1. rewrite H5 in *. apply IHceval2. reflexivity. reflexivity.
+        apply H0. apply IHc1. apply IHc2.
+    - induction H; try inversion Eqcom.
+      + subst b1. rewrite H in H0. inversion H0.
+      + subst b1. rewrite H4 in *. inversion H1.
+      + subst b1. rewrite H5 in *. apply IHceval2. reflexivity. reflexivity.
+        apply H0. apply IHc.
 Qed.
+
+
+(*   induction c.
+    - dependent induction H.
+        + rewrite H0 in H. inversion H.
+        + exists st. apply H0.
+        + apply IHceval2 with (b := b).
+          * reflexivity.
+          * reflexivity.
+          * apply H2.
+    - inversion H.
+      + subst. rewrite H0 in H4. discriminate H4.
+      + subst. inversion H5.
+      + subst.
+
+Qed. *)
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ceval_deterministic) *)
