@@ -2573,38 +2573,32 @@ Inductive ceval : com -> state -> result -> state -> Prop :=
       st =[ c ]=> st' / SContinue ->
       st' =[CWhile b c]=> st'' / SContinue ->
       st =[CWhile b c]=> st'' / SContinue
-  | E_ForInitBreak : forall b_test st st' c_init c_end c_body,
-      st =[ c_init ]=> st' / SBreak -> 
-      st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
-  | E_ForEqualsWhile : forall b_test st st' c_init c_end c_body,
-      st =[CSeq c_init (CWhile b_test (CSeq c_body c_end)) ]=> st' / SContinue ->
-      st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
 
-
-  (* My failed attempt for defining operational semantics for c-style for loops.
-     I just defaulted to desugaring for loops to while loops *)
-  (* | E_ForFalse : forall b_test st st' res c_init c_end c_body,
-      st =[ c_init ]=> st' / res ->
-      beval st' b_test = false ->
-      st =[ CFor b_test c_init c_end c_body ]=> st' / res
-  | E_ForInitBreak : forall b_test st st' c_init c_end c_body,
-      st =[ c_init ]=> st' / SBreak -> 
-      beval st b_test = true ->
-      st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
-  | E_ForFalse : forall b_test st st' st'' c_init c_end c_body,
-      st =[ c_init ]=> st' / SContinue -> 
+  | E_ForFalse : forall b_test st st' c_init c_end c_body,
+      st =[ c_init ]=> st' / SContinue ->
       beval st' b_test = false ->
       st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
-  | E_ForTrueBreaks : forall b_test st st' st'' c_init c_end c_body,
+  | E_ForInitBreaks : forall b_test st st' c_init c_end c_body,
+      st =[ c_init ]=> st' / SBreak -> 
+      st =[ CFor b_test c_init c_end c_body ]=> st' / SContinue
+  | E_ForBodyBreaks : forall b_test st st' st'' c_init c_end c_body,
       st =[ c_init ]=> st' / SContinue -> 
       beval st' b_test = true ->
-  | E_ForTrueContinue : forall b_test st st' st'' st''' st'''' c_init c_end c_body,
+      st' =[ c_body ]=> st'' / SBreak ->
+      st =[ CFor b_test c_init c_end c_body ]=> st'' / SContinue
+  | E_ForEndBreaks : forall b_test st st' st'' st''' c_init c_end c_body,
+      st =[ c_init ]=> st' / SContinue -> 
+      beval st' b_test = true ->
+      st' =[ c_body ]=> st'' / SContinue ->
+      st'' =[ c_end ]=> st''' / SBreak ->
+      st =[ CFor b_test c_init c_end c_body ]=> st''' / SContinue
+  | E_ForContinue : forall b_test st st' st'' st''' st'''' c_init c_end c_body,
       beval st b_test = true ->
       st =[ c_init ]=> st' / SContinue -> 
       st' =[ c_body ]=> st'' / SContinue ->
       st'' =[ c_end ]=> st''' / SContinue ->
-      st''' =[ CFor b_test c_init c_end c_body ]=> st'''' / SBreak ->
-      st =[ CFor b_test c_init c_end c_body ]=> st'''' / SContinue *)
+      st''' =[ CFor b_test CSkip c_end c_body ]=> st'''' / SContinue ->
+      st =[ CFor b_test c_init c_end c_body ]=> st'''' / SContinue
       
 
   where "st '=[' c ']=>' st' '/' s" := (ceval c st s st').
@@ -2616,7 +2610,7 @@ Print ceval.
 
 Example for_1 : com := 
 <{
-Y := 10;
+Y := 3;
 W := 0;
 for ( X := 0 \ X <= Y \ X := X + 1 ) do
   W := W + X
@@ -2629,349 +2623,108 @@ Set Printing Notations.
 
 Locate "=[".
 
-Example for_1_proof :
+Ltac neq_vars_not H := unfold not; intros; discriminate H.
+
+Example for_1_proof1 :
   empty_st =[
     for_1
-  ]=> (X !-> 11 ; Y !-> 10 ; W !-> 55) / SContinue.
+  ]=> (X !-> 4 ; Y !-> 3 ; W !-> 6) / SContinue.
 Proof.
   unfold for_1.
-  apply E_Seq with (st' := (Y !-> 10)).
-  (* Y := 10 *)
+  apply E_Seq with (st' := (Y !-> 3)).
+  (* C1: Y := 10 *)
   apply E_Asgn. simpl. reflexivity.
-  (* W := 0 *)
-  apply E_Seq with (st' := (W !-> 0 ; Y !->10 )).
+
+  (* C2: W := 0 *)
+  apply E_Seq with (st' := (W !-> 0 ; Y !-> 3)).
   apply E_Asgn. simpl. reflexivity.
-  (* desugar for into while *)
-  apply E_ForEqualsWhile.
 
-  apply E_Seq with (st' := (X !-> 0 ; W !-> 0; Y !-> 10)).
-  { (* X := 0 *)
-    apply E_Asgn. simpl. reflexivity.
-  }
-  apply E_WhileTrue with (st' := (X !-> 1; W !-> 0; Y !-> 10)).
-  {
-    simpl. reflexivity.
-  }
-  {
-    apply E_Seq with (st' := (W !-> 0; Y !-> 10)).
-      {
-        rewrite t_update_permute. rewrite t_update_same with (m := (X !-> 0; Y !-> 10)).
-        rewrite t_update_same. apply E_Asgn. simpl. reflexivity.
+  (* C3: for loop :) *)
+  apply E_ForContinue with (st' := (X !-> 0 ; W !-> 0 ; Y !-> 3)) (st'' := (X !-> 0 ; W !-> 0 ; Y !-> 3)) (st''' := (X !-> 1 ;W !-> 0 ; Y !-> 3)).
+  (* b_test *)
+  simpl. reflexivity.
 
-        unfold not. intros. discriminate H.  
-      }
-      {
-        apply E_Asgn. simpl. reflexivity.
-      }
-  }
-  {
-  (* X = 1 *)
-  apply E_WhileTrue with (st' := (X !-> 2; W !-> 1; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    apply E_Seq with (st' := (W !-> 1; X !-> 1; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. rewrite t_update_same with (m := (X !-> 1; Y !-> 10)).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 1) (v2 := 2).
-          apply E_Asgn with (st := (X !-> 1; W !-> 1; Y !-> 10)).
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
+  (* c_init : X = 0 *)
+  apply E_Asgn. simpl. reflexivity.
 
-  { (* X = 2 *)
-  apply E_WhileTrue with (st' := (X !-> 3; W !-> 3; Y !-> 10)).
-    { (*show loop cond is true *)
-    simpl. reflexivity.
-    }
-    { (* show loop body executes with state SContinue *)
-      apply E_Seq with (st' := (W !-> 3; X !-> 2; Y !-> 10)).
-      { (* W = W + X *)
-        rewrite t_update_permute. 
-        rewrite <- t_update_shadow with (x := W) (v1:= 1) (v2 := 3).
-        apply E_Asgn. simpl.  reflexivity.
-        {
-          unfold not. intros. discriminate H.
-        }
-      }
-      { (* x = x + 1 *)
-        rewrite t_update_permute. 
-          {
-            rewrite <- t_update_shadow with (x := X) (v1:= 2) (v2 := 3).
-            apply E_Asgn.
-            simpl. reflexivity.
-          }
-          {
-            unfold not. intros. discriminate H.
-          }
-      }
-    }
-  { (* X = 3 *)
-  apply E_WhileTrue with (st' := (X !-> 4; W !-> 6; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    (* first command of seq adds X to W. st' should be the state where X is added to W*)
-    apply E_Seq with (st' := (W !-> 6; X !-> 3; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. 
-      rewrite <- t_update_shadow with (x := W) (v1:= 3) (v2 := 6).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 3) (v2 := 4).
-          apply E_Asgn.
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
-  { (* X = 4 *)
-  (* st' for E_WhileTrue should be state where W += X; X += 1*)
-  apply E_WhileTrue with (st' := (X !-> 5; W !-> 10; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    (* first command of seq adds X to W. st' should be the state where X is added to W*)
-    apply E_Seq with (st' := (W !-> 10; X !-> 4; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. 
-      rewrite <- t_update_shadow with (x := W) (v1:= 6) (v2 := 10).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 4) (v2 := 5).
-          apply E_Asgn.
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
+  (* c_body : W = W + X*)
+  rewrite t_update_same with (x := W) at 1.
+  rewrite t_update_permute with (x1 := X) (x2 := W).
+  apply E_Asgn. simpl. reflexivity. neq_vars_not H.
+
+  (* c_end : X = X + 1 *)
+  rewrite t_update_same with (x := X).
+  apply E_Asgn. simpl. reflexivity.
+
+  (* for loop iteration 1 *)
+  apply E_ForContinue with (st' := (X !-> 1 ; W !-> 0 ; Y !-> 3)) (st'' := (X !-> 1 ; W !-> 1 ; Y !-> 3)) (st''' := (X !-> 2 ;W !-> 1 ; Y !-> 3)).
+
+  (* b_test *)
+  simpl. reflexivity.
+
+  (* c_init : skip *)
+  apply E_Skip.
+
+  (* c_body *)
+  rewrite t_update_same with (x := W).
+  rewrite t_update_permute with (x1 := X) (x2 := W).
+  apply E_Asgn. simpl. reflexivity. neq_vars_not H.
+
+  (* c_end *)
+  rewrite <- t_update_shadow with (x := X) (v1 := 1) (v2 := 2).
+  apply E_Asgn. simpl. reflexivity.
+
+  (* for loop iteration 2 *)
+  apply E_ForContinue with (st' := (X !-> 2 ; W !-> 1 ; Y !-> 3)) (st'' := (X !-> 2 ; W !-> 3 ; Y !-> 3)) (st''' := (X !-> 3 ;W !-> 3 ; Y !-> 3)).
+
+  (* b_test *)
+  simpl. reflexivity.
+
+  (* c_init : skip *)
+  apply E_Skip.
+
+  (* c_body *)
+  rewrite t_update_permute with (x1 := X) (x2 := W).
+  rewrite t_update_permute with (x1 := X) (x2 := W).
+  rewrite <- t_update_shadow with (x := W) (v1 := 1) (v2 := 3).
+  apply E_Asgn. simpl. reflexivity. neq_vars_not H. neq_vars_not H.
+
+  (* c_end *)
+  rewrite <- t_update_shadow with (x := X) (v1 := 2) (v2 := 3).
+  apply E_Asgn. simpl. reflexivity.
+
+  (* for loop iteration 3*)
+  apply E_ForContinue with (st' := (X !-> 3 ; W !-> 3 ; Y !-> 3)) (st'' := (X !-> 3 ; W !-> 6 ; Y !-> 3)) (st''' := (X !-> 4 ;W !-> 6 ; Y !-> 3)).
+
+  (* b_test *)
+  simpl. reflexivity.
+
+  (* c_init : skip *)
+  apply E_Skip.
+
+  (* c_body *)
+  rewrite t_update_permute with (x1 := X) (x2 := W).
+  rewrite t_update_permute with (x1 := X) (x2 := W).
+  rewrite <- t_update_shadow with (x := W) (v1 := 3) (v2 := 6).
+  apply E_Asgn. simpl. reflexivity. neq_vars_not H. neq_vars_not H.
+
+  (* c_end *)
+  rewrite <- t_update_shadow with (x := X) (v1 := 3) (v2 := 4).
+  apply E_Asgn. simpl. reflexivity.
+
+  (* for loop interation 4. b_test is false *)
+  apply E_ForFalse.
+
+  (* c_init : skip *)
+  assert (H: (X !-> 4; W !-> 6; Y !-> 3) = (X !-> 4; Y !-> 3 ; W !-> 6)).
   {
-  { (* X = 5 *)
-  (* st' for E_WhileTrue should be state where W += X; X += 1*)
-  apply E_WhileTrue with (st' := (X !-> 6; W !-> 15; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    (* first command of seq adds X to W. st' should be the state where X is added to W*)
-    apply E_Seq with (st' := (W !-> 15; X !-> 5; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. 
-      rewrite <- t_update_shadow with (x := W) (v1:= 10) (v2 := 15).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 5) (v2 := 6).
-          apply E_Asgn.
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
-  { (* X = 6 *)
-  (* st' for E_WhileTrue should be state where W += X; X += 1*)
-  apply E_WhileTrue with (st' := (X !-> 7; W !-> 21; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    (* first command of seq adds X to W. st' should be the state where X is added to W*)
-    apply E_Seq with (st' := (W !-> 21; X !-> 6; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. 
-      rewrite <- t_update_shadow with (x := W) (v1:= 15) (v2 := 21).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 6) (v2 := 7).
-          apply E_Asgn.
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
-  { (* X = 7 *)
-  (* st' for E_WhileTrue should be state where W += X; X += 1*)
-  apply E_WhileTrue with (st' := (X !-> 8; W !-> 28; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    (* first command of seq adds X to W. st' should be the state where X is added to W*)
-    apply E_Seq with (st' := (W !-> 28; X !-> 7; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. 
-      rewrite <- t_update_shadow with (x := W) (v1:= 21) (v2 := 28).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 7) (v2 := 8).
-          apply E_Asgn.
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
-  { (* X = 8 *)
-  (* st' for E_WhileTrue should be state where W += X; X += 1*)
-  apply E_WhileTrue with (st' := (X !-> 9; W !-> 36; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    (* first command of seq adds X to W. st' should be the state where X is added to W*)
-    apply E_Seq with (st' := (W !-> 36; X !-> 8; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. 
-      rewrite <- t_update_shadow with (x := W) (v1:= 28) (v2 := 36).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 8) (v2 := 9).
-          apply E_Asgn.
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
-  { (* X = 9 *)
-  (* st' for E_WhileTrue should be state where W += X; X += 1*)
-  apply E_WhileTrue with (st' := (X !-> 10; W !-> 45; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    (* first command of seq adds X to W. st' should be the state where X is added to W*)
-    apply E_Seq with (st' := (W !-> 45; X !-> 9; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. 
-      rewrite <- t_update_shadow with (x := W) (v1:= 36) (v2 := 45).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 9) (v2 := 10).
-          apply E_Asgn.
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
-  { (* X = 10 *)
-  (* st' for E_WhileTrue should be state where W += X; X += 1*)
-  apply E_WhileTrue with (st' := (X !-> 11; W !-> 55; Y !-> 10)).
-  { (*show loop cond is true *)
-    simpl. reflexivity.
-  }
-  { (* show loop body executes with state SContinue *)
-    (* first command of seq adds X to W. st' should be the state where X is added to W*)
-    apply E_Seq with (st' := (W !-> 55; X !-> 10; Y !-> 10)).
-    { (* W = W + X *)
-      rewrite t_update_permute. 
-      rewrite <- t_update_shadow with (x := W) (v1:= 45) (v2 := 55).
-      apply E_Asgn. simpl.  reflexivity.
-      {
-        unfold not. intros. discriminate H.
-      }
-    }
-    { (* x = x + 1 *)
-      rewrite t_update_permute. 
-        {
-          rewrite <- t_update_shadow with (x := X) (v1:= 10) (v2 := 11).
-          apply E_Asgn.
-          simpl. reflexivity.
-        }
-        {
-          unfold not. intros. discriminate H.
-        }
-    }
-  }
-  { (* X = 11 *)
-  assert ((X !-> 11; W !-> 55; Y !-> 10) = (X !-> 11; Y !-> 10; W !->55 )). {
-    replace (W !-> 55; Y !-> 10) with ( Y !-> 10; W !-> 55). reflexivity.
-    rewrite t_update_permute. reflexivity. unfold not. intros. discriminate H.
-  }
-  rewrite H.
-  apply E_WhileFalse. simpl. reflexivity.
-  }
-  }
-  }
-  }
-  }
-  }
-  }
-  }
-  }
-  }
-  }
+    replace (W !-> 6; Y !-> 3) with (Y !-> 3; W !-> 6). reflexivity. rewrite t_update_permute.
+    reflexivity. neq_vars_not H.
   }
 
+  rewrite H. apply E_Skip. simpl. reflexivity.
 Qed.
+
 
 End ForImp.
 
