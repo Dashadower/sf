@@ -2426,7 +2426,7 @@ Theorem ceval_deterministic: forall (c:com) st st1 st2 s1 s2,
      st1 = st2 /\ s1 = s2.
 Proof.
   intros c.
-  induction c; try (intros; inversion H; inversion H0; subst; split;reflexivity).  
+  induction c; try (intros; inversion H; inversion H0; subst; split;reflexivity).
     - intros. inversion H.
         (* Case 1. c1 breaks *)
         + subst. inversion H0.
@@ -2465,25 +2465,25 @@ Proof.
           ** subst. apply IHc2 with (st2 := st2)(s2 := s2) in H8.
              *** apply H8.
              *** apply H10.
-    - intros. destruct (beval st b) eqn:Eqb.
-      + inversion H.
-        * subst. rewrite Eqb in H6. discriminate H6.
-        * subst. inversion H0.
-          ** subst. rewrite Eqb in H8. discriminate H8.
-          ** subst. apply IHc with (st2 := st2)(s2 := SBreak) in H7.
-             *** split.
-                 **** destruct H7. apply H1.
-                 **** reflexivity.
-             *** apply H9.
-          ** subst. inversion H10.
-        * subst. inversion H8.
-      + inversion H.
-        * subst. inversion H0.
-          ** subst. split. all: reflexivity.
-          ** subst. rewrite H6 in H3. discriminate H3.
-          ** subst. rewrite H6 in H3. discriminate H3.
-        * subst. rewrite Eqb in H3. discriminate H3.
-        * subst. rewrite Eqb in H3. discriminate H3.
+    - intros. remember (<{ while b do c end}>) as Hc.
+      induction H; try (inversion HeqHc).
+      + subst. inversion H0.
+        * subst. split. reflexivity. reflexivity.
+        * subst. rewrite H3 in H. discriminate H.
+        * subst. rewrite H3 in H. discriminate H.
+      + subst. inversion H0.
+        * subst. rewrite H in H7. discriminate H7.
+        * subst. apply IHc with (st2 := st2) (s1 := SBreak) (s2 := SBreak) in H1. destruct H1.
+          split. apply H1. reflexivity. apply H8.
+        * subst. apply IHc with (st2 := st'0) (s1 := SBreak) (s2 := SContinue) in H1. destruct H1.
+          discriminate H2. apply H5.
+      + subst. remember (<{ while b do c end}>) as Hc.
+        induction H0; try (discriminate HeqHc0); (inversion HeqHc0; subst).
+        * rewrite H in H0. inversion H0.
+        * apply IHc with (st2 := st') (s1 := SBreak) (s2 := SContinue) in H3. destruct H3.
+          discriminate H4. apply H1.
+        * apply IHc with (st2 := st'0) (s2 := SContinue) in H1 as H3. destruct H3. subst. apply IHceval2.
+          reflexivity. apply H0_0. apply H0_.
 Qed.
 (** [] *)
 End BreakImp.
