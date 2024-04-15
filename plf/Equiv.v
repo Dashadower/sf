@@ -443,7 +443,20 @@ Theorem while_true : forall b c,
     <{ while b do c end }>
     <{ while true do skip end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intros.
+  - remember (<{while b do c end}>) as cmd eqn:Eqc.
+    induction H0; try inversion Eqc.
+    + unfold bequiv in H. subst. rewrite H in H0. discriminate H0.
+    + subst. apply (while_true_nonterm _ c st' st'') in H. unfold not in H. apply H in H0_0. destruct H0_0.
+  - inversion H0.
+    + subst. discriminate H5.
+    + assert (bequiv <{true}> <{true}>). {
+        unfold bequiv. reflexivity.
+      }
+      apply (while_true_nonterm _ CSkip st st') in H8. unfold not in H8.
+      apply H8 in H0. destruct H0.
+Qed.
 (** [] *)
 
 (** A more interesting fact about [while] commands is that any number
@@ -487,7 +500,20 @@ Proof.
 Theorem seq_assoc : forall c1 c2 c3,
   cequiv <{(c1;c2);c3}> <{c1;(c2;c3)}>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intros.
+  - inversion H. subst.
+    inversion H2. subst.
+    apply E_Seq with (st' := st'1).
+    + assumption.
+    + apply E_Seq with (st' := st'0); assumption.
+  - inversion H. subst.
+    inversion H5. subst.
+    apply E_Seq with (st' := st'1).
+    + apply E_Seq with (st' := st'0); assumption.
+    + assumption.
+Qed.
+
 (** [] *)
 
 (** Proving program properties involving assignments is one place
@@ -516,7 +542,16 @@ Theorem assign_aequiv : forall (X : string) (a : aexp),
   aequiv <{ X }> a ->
   cequiv <{ skip }> <{ X := a }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intros; inversion H0; subst.
+  - assert (Hx : st' =[ X := a ]=> (X !-> st' X ; st')). {
+      apply E_Asgn. unfold aequiv in H. symmetry. apply (H st').
+    }
+    rewrite t_update_same in Hx. apply Hx.
+  - unfold aequiv in H. rewrite <- (H st). rewrite t_update_same.
+    apply E_Skip.
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (equiv_classes) *)
