@@ -186,7 +186,13 @@ Theorem skip_right : forall c,
     <{ c ; skip }>
     c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intros H.
+    - inversion H. inversion H5. subst. apply H2.
+    - apply E_Seq with (st' := st').
+      + apply H.
+      + apply E_Skip.
+Qed.
 (** [] *)
 
 (** Similarly, here is a simple equivalence that optimizes [if]
@@ -278,7 +284,14 @@ Theorem if_false : forall b c1 c2,
     <{ if b then c1 else c2 end }>
     c2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intros.
+  - inversion H0.
+    + subst. unfold bequiv in H. rewrite H in H6. simpl in H6. discriminate.
+    + subst. apply H7.
+  - apply E_IfFalse; try assumption.
+    unfold bequiv in H. apply H.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (swap_if_branches)
@@ -291,7 +304,24 @@ Theorem swap_if_branches : forall b c1 c2,
     <{ if b then c1 else c2 end }>
     <{ if ~ b then c2 else c1 end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intros H.
+  - inversion H.
+    + subst. apply E_IfFalse.
+      * simpl. rewrite H5. reflexivity.
+      * apply H6.
+    + subst. apply E_IfTrue.
+      * simpl. rewrite H5. reflexivity.
+      * apply H6.
+  - inversion H; subst.
+    + simpl in H5. apply E_IfFalse. 
+      * apply negb_true_iff in H5. apply H5.
+      * apply H6.
+    + simpl in H5. apply negb_false_iff in H5. apply E_IfTrue.
+      * apply H5.
+      * apply H6.
+Qed.
+
 (** [] *)
 
 (** For [while] loops, we can give a similar pair of theorems.  A loop
@@ -323,7 +353,25 @@ Proof.
 
     Write an informal proof of [while_false].
 
-(* FILL IN HERE *)
+We must show that for all states st and st' given b equates to false,
+if st =[while b do c end]=> st' then st =[skip]=> st'.
+
+Case ->. 
+  We have st =[ while b do c end ]=> st'. Consider the two rules:
+
+  1. E_WhileFalse
+  By definition, st = st' which shows that st =[skip]=>st. This is clear fro E_Skip.
+
+  2. E_WhileTrue
+  The rule assumes beval st b = true, which is contradictory from the hypothesis.
+
+Case <-.
+  We have st =[skip]=> st'. By definition, we have st = st'.
+  This means we must show st' =[ while b do c end ]=> st'.
+  Since b equates to false, by definition of E_WhileFalse the goal is proved.
+
+Qed
+
 *)
 (** [] *)
 
@@ -379,7 +427,8 @@ Proof.
 
     Explain what the lemma [while_true_nonterm] means in English.
 
-(* FILL IN HERE *)
+Having the loop guard be a tuatology guaranteees the absence of any state being the result
+of the execution of the while loop, meaning the loop never ends.
 *)
 (** [] *)
 
