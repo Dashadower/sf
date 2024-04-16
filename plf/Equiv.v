@@ -615,8 +615,8 @@ Definition prog_i : com :=
        X := Y + 1
      end }>.
 
-Definition equiv_classes : list (list com)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition equiv_classes : list (list com) :=
+  [[prog_a; prog_b; prog_c; prog_d; prog_e; prog_h; prog_i];[prog_f; prog_g]].
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_equiv_classes : option (nat*string) := None.
@@ -809,7 +809,14 @@ Theorem CSeq_congruence : forall c1 c1' c2 c2',
   cequiv c1 c1' -> cequiv c2 c2' ->
   cequiv <{ c1;c2 }> <{ c1';c2' }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  assert (A: forall (c1 c2 c1' c2' : com) (st st' : state),
+      cequiv c1 c1' -> cequiv c2 c2' ->
+      st =[ c1; c2 ]=> st' ->
+      st =[ c1'; c2' ]=> st').
+  {
+    intros. unfold cequiv in H1.
+  }
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (CIf_congruence) *)
