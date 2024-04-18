@@ -815,8 +815,18 @@ Proof.
       st =[ c1; c2 ]=> st' ->
       st =[ c1'; c2' ]=> st').
   {
-    intros. unfold cequiv in H1.
+    unfold cequiv.
+    intros.
+    remember <{c0; c3}> as cseq eqn:Eqc.
+    induction H3; inversion Eqc; subst.
+    - apply E_Seq with (st' := st').
+      + apply H1. apply H3_.
+      + apply H2. apply H3_0.
   }
+  split.
+  - apply A; assumption.
+  - apply A; apply sym_cequiv; assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (CIf_congruence) *)
