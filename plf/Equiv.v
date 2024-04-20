@@ -1366,6 +1366,7 @@ Fixpoint optimize_0plus_aexp (a : aexp) : aexp :=
   match a with
     | ANum n => ANum n
     | AId x => AId x
+    | APlus (ANum 0) y => y
     | APlus x y => APlus (optimize_0plus_aexp x) (optimize_0plus_aexp y)
     | AMinus x y => AMinus (optimize_0plus_aexp x) (optimize_0plus_aexp y)
     | AMult x y => AMult (optimize_0plus_aexp x) (optimize_0plus_aexp y)
@@ -1383,15 +1384,22 @@ Fixpoint optimize_0plus_bexp (b : bexp) : bexp :=
     | BAnd b1 b2 => BAnd (optimize_0plus_bexp b1) (optimize_0plus_bexp b2)
   end.
 
-Fixpoint optimize_0plus_com (c : com) : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint optimize_0plus_com (c : com) : com :=
+  match c with
+    | CSkip => CSkip
+    | CAsgn x a => CAsgn x (optimize_0plus_aexp a)
+    | CSeq c1 c2 => CSeq (optimize_0plus_com c1) (optimize_0plus_com c2)
+    | CIf b c1 c2 => CIf (optimize_0plus_bexp b) (optimize_0plus_com c1) (optimize_0plus_com c2)
+    | CWhile b c => CWhile (optimize_0plus_bexp b) (optimize_0plus_com c)
+  end.
 
 Example test_optimize_0plus:
     optimize_0plus_com
        <{ while X <> 0 do X := 0 + X - 1 end }>
   =    <{ while X <> 0 do X := X - 1 end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  simpl. reflexivity.
+Qed.
 
 (** Prove that these three functions are sound, as we did for
     [fold_constants_*].  Make sure you use the congruence lemmas in the
@@ -1400,17 +1408,38 @@ Proof.
 Theorem optimize_0plus_aexp_sound:
   atrans_sound optimize_0plus_aexp.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold atrans_sound. unfold aequiv. intros.
+  induction a; try reflexivity.
+  - destruct a1.
+    + destruct n; simpl.
+      * reflexivity.
+      * rewrite IHa2. reflexivity.
+    + simpl. rewrite IHa2. reflexivity.
+    + simpl in *. rewrite add_comm. rewrite IHa1. rewrite IHa2. rewrite add_comm. reflexivity.
+    + simpl in *. rewrite add_comm. rewrite IHa1. rewrite IHa2. rewrite add_comm. reflexivity.
+    + simpl in *. rewrite IHa1. rewrite IHa2. reflexivity.
+  - simpl in *. rewrite IHa1. rewrite IHa2. reflexivity.
+  - simpl in *. rewrite IHa1. rewrite IHa2. reflexivity.
+Qed.
 
 Theorem optimize_0plus_bexp_sound :
   btrans_sound optimize_0plus_bexp.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold btrans_sound. unfold bequiv. intros.
+  induction b; try reflexivity; 
+  try (unfold optimize_0plus_bexp; simpl; rewrite <- optimize_0plus_aexp_sound; rewrite <- optimize_0plus_aexp_sound; reflexivity).
+  - simpl. rewrite IHb. reflexivity.
+  - simpl. rewrite IHb1. rewrite IHb2. reflexivity.
+Qed.
 
 Theorem optimize_0plus_com_sound :
   ctrans_sound optimize_0plus_com.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold ctrans_sound. split.
+  - induction c.
+    + simpl. intros. assumption.
+    + simpl. intros. apply CAsgn_congruence in H.
+
 
 (** Finally, let's define a compound optimizer on commands that first
     folds constants (using [fold_constants_com]) and then eliminates
