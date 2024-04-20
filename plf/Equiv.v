@@ -836,7 +836,7 @@ Theorem CIf_congruence : forall b b' c1 c1' c2 c2',
          <{ if b' then c1' else c2' end }>.
 Proof.
   intros.
-  assert (A: forall (c1 c2 c1' c2' : com) (st st' : state),
+  (* assert (A: forall (c1 c2 c1' c2' : com) (st st' : state),
       cequiv c1 c1' -> cequiv c2 c2' ->
       st =[ if b then c1 else c2 end ]=> st' ->
       st =[ if b then c1' else c2' end ]=> st').
@@ -849,9 +849,38 @@ Proof.
     - apply E_IfFalse.
       + apply H4.
       + apply H3. apply H5.
-  }
+  } *)
   split; intros.
-  
+  - assert (B: forall (c1 c2 c1' c2' : com) (st st' : state),
+      cequiv c1 c1' -> cequiv c2 c2' ->
+      st =[ if b then c1 else c2 end ]=> st' ->
+      st =[ if b' then c1' else c2' end ]=> st').
+    {
+      unfold cequiv. intros. remember <{if b then c0 else c3 end}>.
+      induction H5; inversion Heqc; subst.
+      - apply E_IfTrue.
+        + unfold bequiv in H. rewrite <- H. apply H5.
+        + apply H3. apply H6.
+      - apply E_IfFalse.
+        + rewrite <- H. apply H5.
+        + apply H4. apply H6.
+    }
+    apply B with (c1 := c1) (c2 := c2); assumption.
+  - assert (A: forall (c1 c2 c1' c2' : com) (st st' : state),
+      cequiv c1 c1' -> cequiv c2 c2' ->
+      st =[ if b' then c1' else c2' end ]=> st' ->
+      st =[ if b then c1 else c2 end ]=> st').
+    {
+      unfold cequiv. intros. remember <{if b' then c1'0 else c2'0 end}>.
+      induction H5; inversion Heqc; subst.
+      - apply E_IfTrue.
+        + unfold bequiv in H. rewrite H. apply H5.
+        + apply H3. apply H6.
+      - apply E_IfFalse.
+        + rewrite H. apply H5.
+        + apply H4. apply H6.
+    }
+    apply A with (c1' := c1') (c2' := c2'); assumption.
 Qed.
 (** [] *)
 
@@ -1233,9 +1262,25 @@ Proof.
        become constants after folding *)
       simpl. destruct (n =? n0); reflexivity.
   - (* BLe *)
-    (* FILL IN HERE *) admit.
+    simpl.
+    remember (fold_constants_aexp a1) as a1' eqn:Heqa1'.
+    remember (fold_constants_aexp a2) as a2' eqn:Heqa2'.
+    replace (aeval st a1) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct a1'; destruct a2'; try reflexivity.
+    simpl. destruct (n <=? n0); reflexivity.
   - (* BGt *)
-    (* FILL IN HERE *) admit.
+    simpl.
+    remember (fold_constants_aexp a1) as a1' eqn:Heqa1'.
+    remember (fold_constants_aexp a2) as a2' eqn:Heqa2'.
+    replace (aeval st a1) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct a1'; destruct a2'; try reflexivity.
+    simpl. destruct (n <=? n0); reflexivity.
   - (* BNot *)
     simpl. remember (fold_constants_bexp b) as b' eqn:Heqb'.
     rewrite IHb.
@@ -1246,7 +1291,7 @@ Proof.
     remember (fold_constants_bexp b2) as b2' eqn:Heqb2'.
     rewrite IHb1. rewrite IHb2.
     destruct b1'; destruct b2'; reflexivity.
-(* FILL IN HERE *) Admitted.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (fold_constants_com_sound)
@@ -1276,8 +1321,12 @@ Proof.
     + (* b always false *)
       apply trans_cequiv with c2; try assumption.
       apply if_false; assumption.
-  - (* while *)
-    (* FILL IN HERE *) Admitted.
+  - assert (bequiv b (fold_constants_bexp b)). {
+      apply fold_constants_bexp_sound. }
+    destruct (fold_constants_bexp b); try (apply CWhile_congruence; assumption).
+    + apply while_true. apply H.
+    + apply while_false. apply H.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -1313,11 +1362,26 @@ Proof.
      optimize_0plus_com
 *)
 
-Fixpoint optimize_0plus_aexp (a : aexp) : aexp
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint optimize_0plus_aexp (a : aexp) : aexp :=
+  match a with
+    | ANum n => ANum n
+    | AId x => AId x
+    | APlus x y => APlus (optimize_0plus_aexp x) (optimize_0plus_aexp y)
+    | AMinus x y => AMinus (optimize_0plus_aexp x) (optimize_0plus_aexp y)
+    | AMult x y => AMult (optimize_0plus_aexp x) (optimize_0plus_aexp y)
+  end.
 
-Fixpoint optimize_0plus_bexp (b : bexp) : bexp
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint optimize_0plus_bexp (b : bexp) : bexp :=
+  match b with
+    | BTrue => BTrue
+    | BFalse => BFalse
+    | BEq a1 a2 => BEq (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+    | BNeq a1 a2 => BNeq (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+    | BLe a1 a2 => BLe (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+    | BGt a1 a2 => BGt (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+    | BNot b => BNot (optimize_0plus_bexp b)
+    | BAnd b1 b2 => BAnd (optimize_0plus_bexp b1) (optimize_0plus_bexp b2)
+  end.
 
 Fixpoint optimize_0plus_com (c : com) : com
   (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
