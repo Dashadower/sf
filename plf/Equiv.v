@@ -1435,11 +1435,17 @@ Qed.
 Theorem optimize_0plus_com_sound :
   ctrans_sound optimize_0plus_com.
 Proof.
-  unfold ctrans_sound. split.
-  - induction c.
-    + simpl. intros. assumption.
-    + simpl. intros. apply CAsgn_congruence in H.
-
+  unfold ctrans_sound.
+  assert (A: btrans_sound optimize_0plus_bexp). {apply optimize_0plus_bexp_sound. }
+  induction c; simpl.
+  - apply refl_cequiv.
+  - apply CAsgn_congruence. apply optimize_0plus_aexp_sound.
+  - apply CSeq_congruence; assumption.
+  - apply CIf_congruence; try assumption.
+    + apply A.
+  - apply CWhile_congruence; try assumption.
+    + apply A.
+Qed.
 
 (** Finally, let's define a compound optimizer on commands that first
     folds constants (using [fold_constants_com]) and then eliminates
@@ -1452,7 +1458,12 @@ Definition optimizer (c : com) := optimize_0plus_com (fold_constants_com c).
 Theorem optimizer_sound :
   ctrans_sound optimizer.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold ctrans_sound, optimizer.
+  intros.
+  apply trans_cequiv with (c2 := fold_constants_com c).
+  - apply fold_constants_com_sound.
+  - apply optimize_0plus_com_sound.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1599,14 +1610,40 @@ Lemma aeval_weakening : forall x st a ni,
   var_not_used_in_aexp x a ->
   aeval (x !-> ni ; st) a = aeval st a.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x st a.
+  generalize dependent st.
+  induction a.
+  - intros. reflexivity.
+  - intros. simpl. inversion H. unfold t_update. unfold not in H1.
+    destruct (x =? x0)%string eqn:Eqb.
+    + rewrite String.eqb_eq in Eqb. apply H1 in Eqb. destruct Eqb.
+    + reflexivity.
+  - intros. inversion H. subst. simpl. rewrite IHa1.
+    + rewrite IHa2.
+      * reflexivity.
+      * assumption.
+    + assumption.
+  - intros. inversion H. subst. simpl. rewrite IHa1; try assumption.
+    rewrite IHa2; try assumption. reflexivity.
+  - intros. inversion H. subst. simpl. rewrite IHa1; try assumption.
+    rewrite IHa2; try assumption. reflexivity.
+Qed.
 
 (** Using [var_not_used_in_aexp], formalize and prove a correct version
     of [subst_equiv_property]. *)
 
-(* FILL IN HERE
+Definition subst_equiv_property_correct : Prop := forall x1 x2 a1 a2,
+  var_not_used_in_aexp x1 a1 ->
+  cequiv <{ x1 := a1; x2 := a2 }>
+         <{ x1 := a1; x2 := subst_aexp x1 a1 a2 }>.
 
-    [] *)
+Theorem subst_inequiv_correct :
+  subst_equiv_property_correct.
+Proof.
+  unfold subst_equiv_property_correct.
+  intros. 
+  inversion H; subst.
+  - unfold cequiv. intros. apply aeval_weakening with (st := st) (ni := n) in H.
 
 (** **** Exercise: 3 stars, standard (inequiv_exercise)
 
