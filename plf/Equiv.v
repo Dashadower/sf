@@ -1641,7 +1641,23 @@ Theorem subst_inequiv_correct :
   subst_equiv_property_correct.
 Proof.
   unfold subst_equiv_property_correct.
-  intros. 
+  induction a2; intros.
+  - apply CSeq_congruence.
+    + apply refl_cequiv.
+    + simpl. apply refl_cequiv.
+  - apply CSeq_congruence.
+    + apply refl_cequiv.
+    + simpl.
+
+  induction a1; intros.
+  - apply CSeq_congruence.
+    + apply refl_cequiv.
+    + unfold cequiv. intros. apply aeval_weakening with (st := st) (ni := n) in H.
+      split.
+      * intros.
+
+
+  intros.
   inversion H; subst.
   - unfold cequiv. intros. apply aeval_weakening with (st := st) (ni := n) in H.
 
