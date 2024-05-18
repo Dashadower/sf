@@ -1631,23 +1631,52 @@ Qed.
 
 (** Using [var_not_used_in_aexp], formalize and prove a correct version
     of [subst_equiv_property]. *)
-
-Definition subst_equiv_property_correct : Prop := forall x1 x2 a1 a2,
+Theorem subst_inequiv_correct : forall x1 x2 a1 a2,
   var_not_used_in_aexp x1 a1 ->
   cequiv <{ x1 := a1; x2 := a2 }>
          <{ x1 := a1; x2 := subst_aexp x1 a1 a2 }>.
 
-Theorem subst_inequiv_correct :
-  subst_equiv_property_correct.
+    (* subst_aexp x1 a1 a2 => replace x1 with a1 in a2 *)
 Proof.
-  unfold subst_equiv_property_correct.
+  intros.
+  unfold cequiv. split.
+  - intros. apply aeval_weakening with (st := st) (ni := aeval st a1) in H as H1.
+    apply E_Asgn with (x := x1) in H1 as H2. rewrite t_update_shadow in H2.
+    inversion H0. subst.
+    assert (st =[ x1 := a1 ]=> (x1 !-> aeval st a1; st)). {
+      apply E_Asgn. reflexivity.
+    }
+    apply ceval_deterministic with (st1 := st'0) in H3.
+    + apply E_Seq with (st' := st'0). 
+      * assumption.
+      * subst st'0.
+
+
+
+    apply E_Seq with (st' := st'0).
+    + assumption.
+    + inversion H3. subst. induction a2.
+      * simpl. apply H6.
+      * simpl. destruct (x1 =? x)%string eqn:Eqs.
+        ** apply String.eqb_eq in Eqs. subst x1. apply aeval_weakening with (st := st) (ni := aeval st a1) in H.
+           apply E_Asgn with (x := x2) in H. 
+           
+
+  apply CSeq_congruence.
+  - apply refl_cequiv.
+  - unfold cequiv.
+  
+  
   induction a2; intros.
   - apply CSeq_congruence.
     + apply refl_cequiv.
     + simpl. apply refl_cequiv.
   - apply CSeq_congruence.
     + apply refl_cequiv.
-    + simpl.
+    + simpl. admit.
+  - apply CSeq_congruence.
+    + apply refl_cequiv.
+    + simpl. apply IHa2_1 in H as H1. unfold cequiv in H1. apply E_Seq in H1.
 
   induction a1; intros.
   - apply CSeq_congruence.
