@@ -1638,8 +1638,18 @@ Theorem subst_inequiv_correct : forall x1 x2 a1 a2,
 
     (* subst_aexp x1 a1 a2 => replace x1 with a1 in a2 *)
 Proof.
+  (*
+  1. show that subst_aexp x1 a1 a2 equals a2
+  which equivalently means showing cequiv (subst_aexp x1 a1 a2) a2
+  2. voila
+  *)
   intros.
-  unfold cequiv. split.
+  apply CSeq_congruence.
+  - apply refl_cequiv.
+  - unfold cequiv. split.
+Abort.
+
+  (* unfold cequiv. split.
   - intros. apply aeval_weakening with (st := st) (ni := aeval st a1) in H as H1.
     apply E_Asgn with (x := x1) in H1 as H2. rewrite t_update_shadow in H2.
     inversion H0. subst.
@@ -1688,7 +1698,7 @@ Proof.
 
   intros.
   inversion H; subst.
-  - unfold cequiv. intros. apply aeval_weakening with (st := st) (ni := n) in H.
+  - unfold cequiv. intros. apply aeval_weakening with (st := st) (ni := n) in H. *)
 
 (** **** Exercise: 3 stars, standard (inequiv_exercise)
 
