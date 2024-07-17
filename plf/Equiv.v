@@ -353,7 +353,7 @@ Proof.
 
     Write an informal proof of [while_false].
 
-We must show that for all states st and st' given b equates to false,
+We must show that for all states st and st' given b under st equates to false,
 if st =[while b do c end]=> st' then st =[skip]=> st'.
 
 Case ->. 
@@ -1609,6 +1609,7 @@ Inductive var_not_used_in_aexp (x : string) : aexp -> Prop :=
 Lemma aeval_weakening : forall x st a ni,
   var_not_used_in_aexp x a ->
   aeval (x !-> ni ; st) a = aeval st a.
+  (* If x isn't used in a, it doesn't matter what state you evaluate a in. *)
 Proof.
   intros x st a.
   generalize dependent st.
@@ -1639,66 +1640,67 @@ Theorem subst_inequiv_correct : forall x1 x2 a1 a2,
     (* subst_aexp x1 a1 a2 => replace x1 with a1 in a2 *)
 Proof.
   (*
-  1. show that subst_aexp x1 a1 a2 equals a2
-  which equivalently means showing cequiv (subst_aexp x1 a1 a2) a2
-  2. voila
+  if x1 is present in a2 -> problematic
+  replace all occurances of x1 with a1,
+  but a1 doesn't have x1
   *)
   intros.
-  apply CSeq_congruence.
-  - apply refl_cequiv.
-  - unfold cequiv. split.
-Abort.
-
-  (* unfold cequiv. split.
-  - intros. apply aeval_weakening with (st := st) (ni := aeval st a1) in H as H1.
-    apply E_Asgn with (x := x1) in H1 as H2. rewrite t_update_shadow in H2.
-    inversion H0. subst.
-    assert (st =[ x1 := a1 ]=> (x1 !-> aeval st a1; st)). {
-      apply E_Asgn. reflexivity.
-    }
-    apply ceval_deterministic with (st1 := st'0) in H3.
-    + apply E_Seq with (st' := st'0). 
-      * assumption.
-      * subst st'0.
-
-
-
-    apply E_Seq with (st' := st'0).
+  unfold cequiv.
+  split.
+  - intros. inversion H0. subst. inversion H3. inversion H6. subst.
+    apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
     + assumption.
-    + inversion H3. subst. induction a2.
-      * simpl. apply H6.
+    + apply E_Asgn. induction a2.
+      * simpl. reflexivity.
       * simpl. destruct (x1 =? x)%string eqn:Eqs.
-        ** apply String.eqb_eq in Eqs. subst x1. apply aeval_weakening with (st := st) (ni := aeval st a1) in H.
-           apply E_Asgn with (x := x2) in H. 
+        ** apply String.eqb_eq in Eqs. subst. rewrite t_update_eq.
+           apply aeval_weakening. apply H.
+        ** simpl. reflexivity.
+      * simpl. rewrite <- IHa2_1. 
+        ** rewrite <- IHa2_2.
+           *** reflexivity.
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+               **** apply E_Asgn. reflexivity.
+               **** apply E_Asgn. reflexivity.
+        ** apply E_Asgn. reflexivity.
+        ** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Asgn. reflexivity.
+      * simpl. rewrite <- IHa2_1. 
+        ** rewrite <- IHa2_2.
+           *** reflexivity.
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+               **** apply E_Asgn. reflexivity.
+               **** apply E_Asgn. reflexivity.
+        ** apply E_Asgn. reflexivity.
+        ** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Asgn. reflexivity.
+      * simpl. rewrite <- IHa2_1. 
+        ** rewrite <- IHa2_2.
+           *** reflexivity.
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+               **** apply E_Asgn. reflexivity.
+               **** apply E_Asgn. reflexivity.
+        ** apply E_Asgn. reflexivity.
+        ** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Asgn. reflexivity.
+  - intros. inversion H0. inversion H3. inversion H6. subst.
+    apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+    + assumption.
+    + apply E_Asgn. induction a2.
+      * simpl. reflexivity.
+      * simpl. destruct (x1 =? x)%string eqn:Eqs.
+        ** apply String.eqb_eq in Eqs. subst. rewrite t_update_eq.
+           symmetry. apply aeval_weakening. apply H.
+        ** 
            
 
-  apply CSeq_congruence.
-  - apply refl_cequiv.
-  - unfold cequiv.
-  
-  
-  induction a2; intros.
-  - apply CSeq_congruence.
-    + apply refl_cequiv.
-    + simpl. apply refl_cequiv.
-  - apply CSeq_congruence.
-    + apply refl_cequiv.
-    + simpl. admit.
-  - apply CSeq_congruence.
-    + apply refl_cequiv.
-    + simpl. apply IHa2_1 in H as H1. unfold cequiv in H1. apply E_Seq in H1.
-
-  induction a1; intros.
-  - apply CSeq_congruence.
-    + apply refl_cequiv.
-    + unfold cequiv. intros. apply aeval_weakening with (st := st) (ni := n) in H.
-      split.
-      * intros.
-
-
-  intros.
-  inversion H; subst.
-  - unfold cequiv. intros. apply aeval_weakening with (st := st) (ni := n) in H. *)
+Abort.
 
 (** **** Exercise: 3 stars, standard (inequiv_exercise)
 
