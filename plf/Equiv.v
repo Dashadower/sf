@@ -1746,7 +1746,18 @@ Qed.
 Theorem inequiv_exercise:
   ~ cequiv <{ while true do skip end }> <{ skip }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not.
+  intros.
+  pose proof loop_never_stops.
+  unfold loop in H0.
+  unfold cequiv in H.
+  unfold not in H0.
+  apply H0 with (st := empty_st) (st' := empty_st).
+  apply H.
+  apply E_Skip.
+Qed.
+
+
 (** [] *)
 
 (* ################################################################# *)
