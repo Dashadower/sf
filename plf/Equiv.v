@@ -1697,10 +1697,47 @@ Proof.
       * simpl. destruct (x1 =? x)%string eqn:Eqs.
         ** apply String.eqb_eq in Eqs. subst. rewrite t_update_eq.
            symmetry. apply aeval_weakening. apply H.
-        ** 
-           
-
-Abort.
+        ** simpl. reflexivity.
+      * simpl. rewrite <- IHa2_1.
+        (* main goal*)
+        ** rewrite IHa2_2.
+           (* main goal*)
+           *** reflexivity.
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+               **** apply E_Asgn. reflexivity.
+               **** apply E_Asgn. reflexivity.
+        ** apply E_Asgn. reflexivity.
+        ** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Asgn. reflexivity.
+      * simpl. rewrite <- IHa2_1.
+        (* main goal*)
+        ** rewrite IHa2_2.
+           (* main goal*)
+           *** reflexivity.
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+               **** apply E_Asgn. reflexivity.
+               **** apply E_Asgn. reflexivity.
+        ** apply E_Asgn. reflexivity.
+        ** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Asgn. reflexivity.
+      * simpl. rewrite <- IHa2_1.
+        (* main goal*)
+        ** rewrite IHa2_2.
+           (* main goal*)
+           *** reflexivity.
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+               **** apply E_Asgn. reflexivity.
+               **** apply E_Asgn. reflexivity.
+        ** apply E_Asgn. reflexivity.
+        ** apply E_Seq with (st' := (x1 !-> aeval st a1; st)).
+           *** apply E_Asgn. reflexivity.
+           *** apply E_Asgn. reflexivity.
+Qed.
 
 (** **** Exercise: 3 stars, standard (inequiv_exercise)
 
