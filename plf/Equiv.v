@@ -1874,7 +1874,8 @@ Inductive ceval : com -> state -> state -> Prop :=
       st  =[ c ]=> st' ->
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
-(* FILL IN HERE *)
+  | E_Havoc : forall st var (n : nat),
+      st =[ havoc var ]=> (var !-> n ; st)
 
   where "st =[ c ]=> st'" := (ceval c st st').
 
@@ -1883,12 +1884,16 @@ Inductive ceval : com -> state -> state -> Prop :=
 
 Example havoc_example1 : empty_st =[ havoc X ]=> (X !-> 0).
 Proof.
-(* FILL IN HERE *) Admitted.
+  apply E_Havoc.
+Qed.
 
 Example havoc_example2 :
   empty_st =[ skip; havoc Z ]=> (Z !-> 42).
 Proof.
-(* FILL IN HERE *) Admitted.
+  apply E_Seq with (st' := empty_st).
+  - apply E_Skip.
+  - apply E_Havoc.
+Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_Check_rule_for_HAVOC : option (nat*string) := None.
@@ -1915,13 +1920,42 @@ Definition pYX :=
 (** If you think they are equivalent, prove it. If you think they are
     not, prove that. *)
 
+Theorem CSeq_congruence : forall c1 c1' c2 c2',
+  cequiv c1 c1' -> cequiv c2 c2' ->
+  cequiv <{ c1;c2 }> <{ c1';c2' }>.
+Admitted.
+
+Theorem havoc_seq_equiv : 
+  cequiv pXY pYX.
+Proof.
+  unfold pXY.
+  unfold pYX.
+  unfold cequiv.
+  intros.
+  split; intros; inversion H; inversion H2; inversion H5; subst.
+  - apply E_Seq with (st' := (Y !-> n0; st)).
+    + apply E_Havoc.
+    + rewrite t_update_permute.
+      * apply E_Havoc.
+      * unfold not. intros. discriminate H0.
+  - apply E_Seq with (st' := (X !-> n0; st)).
+    + apply E_Havoc.
+    + rewrite t_update_permute.
+      * apply E_Havoc.
+      * unfold not. intros. discriminate H0.
+Qed.
+
 Theorem pXY_cequiv_pYX :
   cequiv pXY pYX \/ ~cequiv pXY pYX.
 Proof.
   (* Hint: You may want to use [t_update_permute] at some point,
      in which case you'll probably be left with [X <> Y] as a
      hypothesis. You can use [discriminate] to discharge this. *)
-  (* FILL IN HERE *) Admitted.
+  unfold pXY.
+  unfold pYX.
+  left.
+  apply havoc_seq_equiv.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, standard, optional (havoc_copy)
@@ -1938,9 +1972,19 @@ Definition pcopy :=
     are not, then prove that.  (Hint: You may find the [assert] tactic
     useful.) *)
 
+(* 
+False, since first prograrm rolls twice from each variable, while pcopy only rolls for X.
+ *)
+
 Theorem ptwice_cequiv_pcopy :
   cequiv ptwice pcopy \/ ~cequiv ptwice pcopy.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+  right.
+  unfold ptwice.
+  unfold pcopy.
+  unfold not.
+  intros.
+  pose proof havoc_seq_equiv.
 (** [] *)
 
 (** The definition of program equivalence we are using here has some
