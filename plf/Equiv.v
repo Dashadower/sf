@@ -1976,6 +1976,24 @@ Definition pcopy :=
 False, since first prograrm rolls twice from each variable, while pcopy only rolls for X.
  *)
 
+Lemma havoc_exists : forall st var,
+  exists n, st =[ havoc var ]=> (var !-> n; st).
+Proof.
+  intros.
+  exists 0.
+  apply E_Havoc.
+Qed.
+
+(* Lemma havoc_exists : forall st var,
+  exists n, (E_Havoc st var n). *)
+
+Lemma havoc_equal : forall st var n m,
+  st =[ havoc var ]=> (var !-> n; st) -> st =[ havoc var ]=> (var !-> m; st).
+Proof.
+  intros.
+  apply E_Havoc.
+Qed.
+
 Theorem ptwice_cequiv_pcopy :
   cequiv ptwice pcopy \/ ~cequiv ptwice pcopy.
 Proof. 
@@ -1983,8 +2001,18 @@ Proof.
   unfold ptwice.
   unfold pcopy.
   unfold not.
+  unfold cequiv.
   intros.
-  pose proof havoc_seq_equiv.
+  pose proof havoc_exists.
+  destruct H0 with (st := empty_st) (var := X).
+  destruct H0 with (st := (X !-> x)) (var := Y).
+  move H1 before H2.
+  destruct H with (st := empty_st) (st' := (Y !-> x0; X !-> x)).
+  apply E_Seq with (c1 := <{havoc X}>) (st := empty_st) (c2 := <{havoc Y}>) (st'' := (Y !->x0; X !-> x)) in H1 as H5.
+  - apply E_Seq with (c1 := <{havoc X}>) (st := empty_st) (c2 := <{Y := X}>) (st'' := (Y !->x; X !-> x)) in H1 as H6.
+    + apply H3 in H5. inversion H5. inversion H6. subst. 
+    
+Qed.
 (** [] *)
 
 (** The definition of program equivalence we are using here has some
