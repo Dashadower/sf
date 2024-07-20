@@ -2088,7 +2088,17 @@ Definition p2 : com :=
 
 Lemma p1_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p1 ]=> st'.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  unfold p1.
+  intros.
+  unfold not in *.
+  intros contra.
+  inversion contra.
+  - subst. simpl in H4.
+    destruct (st' X =? 0) eqn:Eqb.
+    + rewrite eqb_eq in Eqb. apply H in Eqb. destruct Eqb.
+    + simpl in H4. inversion H4.
+  - subst. 
 
 Lemma p2_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p2 ]=> st'.
