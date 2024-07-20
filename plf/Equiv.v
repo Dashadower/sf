@@ -1976,11 +1976,14 @@ Definition pcopy :=
 False, since first prograrm rolls twice from each variable, while pcopy only rolls for X.
  *)
 
-Lemma havoc_exists : forall st var,
-  exists n, st =[ havoc var ]=> (var !-> n; st).
+
+(* Lemma havoc_exists : forall st var P,
+  exists n, (E_Havoc st var n P). *)
+
+Lemma havoc_exists : forall st var n,
+  st =[ havoc var ]=> (var !-> n; st).
 Proof.
   intros.
-  exists 0.
   apply E_Havoc.
 Qed.
 
@@ -1994,24 +1997,61 @@ Proof.
   apply E_Havoc.
 Qed.
 
+Lemma wrong_asign :
+  ~ ((X !-> 0) =[ Y := X ]=> (Y !-> 1; X !-> 0)).
+Proof.
+  unfold not.
+  intros.
+  inversion H.
+  subst.
+  simpl in H4.
+  rewrite t_update_same in H4. unfold empty_st in H4. rewrite t_apply_empty in H4.
+  assert (H5: (Y !-> 1; _ !-> 0) Y = 1).
+  - unfold t_update. simpl. reflexivity.
+  - rewrite <- H4 in H5. unfold t_update in H5. simpl in H5. discriminate H5.
+Qed.
+
+Lemma assign_twovar_equal : forall (x y : string) n st,
+  (x !-> n ; st) =[ y := x ]=> (y !-> n; x !-> n; st).
+Proof.
+  intros.
+  apply E_Asgn.
+  unfold aeval.
+  rewrite t_update_eq.
+  reflexivity.
+Qed.
+  
+
 Theorem ptwice_cequiv_pcopy :
   cequiv ptwice pcopy \/ ~cequiv ptwice pcopy.
-Proof. 
+Proof.
   right.
   unfold ptwice.
   unfold pcopy.
   unfold not.
   unfold cequiv.
   intros.
-  pose proof havoc_exists.
-  destruct H0 with (st := empty_st) (var := X).
-  destruct H0 with (st := (X !-> x)) (var := Y).
-  move H1 before H2.
-  destruct H with (st := empty_st) (st' := (Y !-> x0; X !-> x)).
-  apply E_Seq with (c1 := <{havoc X}>) (st := empty_st) (c2 := <{havoc Y}>) (st'' := (Y !->x0; X !-> x)) in H1 as H5.
-  - apply E_Seq with (c1 := <{havoc X}>) (st := empty_st) (c2 := <{Y := X}>) (st'' := (Y !->x; X !-> x)) in H1 as H6.
-    + apply H3 in H5. inversion H5. inversion H6. subst. 
-    
+  pose proof (havoc_exists empty_st X 0).
+  pose proof (havoc_exists empty_st Y 1).
+  destruct H with (st := empty_st) (st' := (Y !-> 1; X !-> 0)).
+  apply E_Seq with (c1 := <{havoc X}>) (st := empty_st) (c2 := <{Y := X}>) (st'' := (Y !->0; X !-> 0)) in H0 as H4.
+  - apply H in H3 as H5.
+    + inversion H5. inversion H8. rewrite <- H14 in H8. apply havoc_equal with (m := 0) in H8.
+      inversion H8. subst. inversion H11.
+      assert (H13: (Y !-> n1; X !-> n) X = 0).
+      * rewrite H12. unfold t_update. simpl. reflexivity.
+      * unfold t_update in H13. simpl in H13.
+        assert (H14: (Y !-> n1; X !-> n) Y = 1).
+        ** rewrite H12. unfold t_update. simpl. reflexivity.
+        ** unfold t_update in H14. simpl in H14. subst. simpl in H14.
+           unfold t_update in H14. simpl in H14. discriminate H14.
+    + apply H6. apply E_Seq with (st' := (X !-> 0)).
+      * apply E_Havoc.
+      * apply E_Havoc.
+  - apply E_Asgn.
+    simpl.
+    rewrite t_update_eq.
+    reflexivity.
 Qed.
 (** [] *)
 
