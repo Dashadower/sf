@@ -2090,15 +2090,40 @@ Lemma p1_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p1 ]=> st'.
 Proof.
   unfold p1.
+
+
+  (* intros st.
+  induction (st X) eqn:IhX.
+  - intros. destruct H. reflexivity.
+  - intros. clear H. apply IHn. *)
   intros.
   unfold not in *.
   intros contra.
-  inversion contra.
-  - subst. simpl in H4.
-    destruct (st' X =? 0) eqn:Eqb.
-    + rewrite eqb_eq in Eqb. apply H in Eqb. destruct Eqb.
-    + simpl in H4. inversion H4.
-  - subst. 
+
+  (* ---------------------- *)
+
+  (* inversion contra.
+  - subst. inversion H4. apply negb_false_iff in H1. apply eqb_eq in H1.
+    apply H. apply H1.
+  - subst. *)
+
+  (* ---------------------- *)
+
+  remember <{ while ~ X = 0 do havoc Y; X := X + 1 end }> as loopdef.
+
+  inversion contra; subst.
+  - discriminate H0.
+  - discriminate H1.
+  - discriminate H2.
+  - discriminate H2.
+  - discriminate H2.
+  - inversion H1. subst. clear H1. inversion H0. apply negb_false_iff in H2.
+    rewrite eqb_eq in H2. apply H. apply H2.
+  - inversion H3. subst. clear H3. inversion H2.
+    + subst. admit.
+    + subst. 
+  - inversion H0.
+Qed.
 
 Lemma p2_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p2 ]=> st'.
