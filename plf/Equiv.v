@@ -2086,49 +2086,56 @@ Definition p2 : com :=
     started in.  We can capture the termination behavior of [p1] and
     [p2] individually with these lemmas: *)
 
+Lemma n_not_zero_is_succ : forall n,
+  n <> 0 -> exists n', n = S n'.
+Proof.
+  induction n.
+  - intros. unfold not in H. destruct H. reflexivity.
+  - intros. exists n. reflexivity.
+Qed.
+
 Lemma p1_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p1 ]=> st'.
 Proof.
   unfold p1.
-
-
-  (* intros st.
-  induction (st X) eqn:IhX.
-  - intros. destruct H. reflexivity.
-  - intros. clear H. apply IHn. *)
   intros.
-  unfold not in *.
+  unfold not.
   intros contra.
 
-  (* ---------------------- *)
-
-  (* inversion contra.
-  - subst. inversion H4. apply negb_false_iff in H1. apply eqb_eq in H1.
-    apply H. apply H1.
-  - subst. *)
-
-  (* ---------------------- *)
-
   remember <{ while ~ X = 0 do havoc Y; X := X + 1 end }> as loopdef.
-
-  inversion contra; subst.
-  - discriminate H0.
-  - discriminate H1.
-  - discriminate H2.
-  - discriminate H2.
-  - discriminate H2.
-  - inversion H1. subst. clear H1. inversion H0. apply negb_false_iff in H2.
-    rewrite eqb_eq in H2. apply H. apply H2.
-  - inversion H3. subst. clear H3. inversion H2.
-    + subst. admit.
-    + subst. 
-  - inversion H0.
+  induction contra; try (inversion Heqloopdef).
+  - subst. unfold not in *. simpl in H0. apply negb_false_iff in H0.
+    apply eqb_eq in H0. apply H. apply H0.
+  - subst. clear Heqloopdef. apply IHcontra2.
+    + simpl in H0. apply negb_true_iff in H0.
+      assert (H1: st X <> 0 -> exists n', st = (X !-> S n' ; st)).
+      {
+        intros. apply n_not_zero_is_succ in H1. destruct H1. exists x.
+        rewrite <- H1. rewrite t_update_same. reflexivity.
+      }
+      apply H1 in H. destruct H. rewrite H in contra1.
+      inversion contra1. inversion H4.
+      rewrite <- H10 in H7. inversion H7. subst. unfold t_update. simpl.
+      unfold not. intros. inversion H2.
+    + reflexivity.
 Qed.
 
 Lemma p2_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p2 ]=> st'.
 Proof.
-(* FILL IN HERE *) Admitted.
+  unfold p2.
+  intros.
+  unfold not.
+  intros contra.
+  remember <{ while ~ X = 0 do skip end }> as loopdef.
+  induction contra; try (inversion Heqloopdef).
+  - subst. unfold not in *. simpl in H0. apply negb_false_iff in H0.
+    apply eqb_eq in H0. apply H. apply H0.
+  - subst. clear Heqloopdef. inversion contra1. subst.
+    apply IHcontra2.
+    + apply H.
+    + reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (p1_p2_equiv)
