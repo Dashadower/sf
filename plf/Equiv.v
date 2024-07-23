@@ -2189,8 +2189,55 @@ Definition p4 : com :=
   <{ X := 0;
      Z := 1 }>.
 
+Lemma p3_terminates : forall st,
+  st X <> 0 -> forall n, st =[ p3 ]=> (X !-> 0 ; Z !-> n; st).
+Proof.
+  intros.
+  unfold p3.
+  apply E_Seq with (st' := (Z !-> 1; st)).
+  - apply E_Asgn. reflexivity.
+  - induction (st X) eqn:EqX.
+    + 
+
+  induction (st X) eqn: EqhX.
+  - intros. unfold not in H. assert (H0: 0 = 0) by reflexivity.
+    apply H in H0. destruct H0.
+  - intros H. apply IHn.
+
 Theorem p3_p4_inequiv : ~ cequiv p3 p4.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  unfold not.
+  unfold p3.
+  unfold p4.
+  unfold cequiv.
+  intros.
+  remember empty_st as st.
+  specialize (H empty_st empty_st).
+  assert (H0 : st = (X !-> 0 ; st)).
+  {
+    rewrite Heqst. unfold empty_st. rewrite t_update_same. reflexivity.
+  }
+  assert (H1: st =[X := 0]=> (X!-> 0; st)).
+  {
+    apply E_Asgn. reflexivity.
+  }
+  assert (H2: st =[ X := 0; Z := 1 ]=> (Z !-> 1; X !-> 0; st)).
+  {
+    apply E_Seq with (st' := (X!-> 0; st)).
+    - apply H1.
+    - apply E_Asgn. reflexivity.
+  }
+  clear H1.
+  apply H in H2.
+  rewrite H0 in H2.
+  inversion H2.
+  subst.
+  inversion H4.
+  subst.
+  inversion H7.
+  - subst. simpl in H6.
+
+
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (p5_p6_equiv)
