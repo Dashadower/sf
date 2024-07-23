@@ -2143,8 +2143,33 @@ Qed.
     Use these two lemmas to prove that [p1] and [p2] are actually
     equivalent. *)
 
+
 Theorem p1_p2_equiv : cequiv p1 p2.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  pose proof p1_may_diverge.
+  pose proof p2_may_diverge.
+  unfold cequiv.
+  unfold p1 in *.
+  unfold p2 in *.
+  split; intros.
+  - induction (st X) eqn:Eqi.
+    + inversion H1.
+      * subst. apply E_WhileFalse. apply H6.
+      * subst. unfold  beval in H4. simpl in H4. rewrite Eqi in H4.
+        apply negb_true_iff in H4. simpl in H4. discriminate H4.
+    + apply H in H1.
+      * destruct H1.
+      * unfold not. intros. rewrite Eqi in H2. discriminate H2.
+  - induction (st X) eqn:Eqi.
+    + inversion H1.
+      * subst. apply E_WhileFalse. apply H6.
+      * subst. unfold beval in H4. simpl in H4. rewrite Eqi in H4.
+        apply negb_true_iff in H4. simpl in H4. discriminate H4.
+    + apply H0 in H1.
+      * destruct H1.
+      * unfold not. intros. rewrite Eqi in H2. discriminate H2.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (p3_p4_inequiv)
