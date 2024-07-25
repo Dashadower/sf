@@ -2190,19 +2190,20 @@ Definition p4 : com :=
      Z := 1 }>.
 
 Lemma p3_terminates : forall st,
-  st X <> 0 -> forall n, st =[ p3 ]=> (X !-> 0 ; Z !-> n; st).
+  st X = 0 -> st =[ p3 ]=> (X !-> 0 ; Z !-> 1; st).
 Proof.
   intros.
   unfold p3.
   apply E_Seq with (st' := (Z !-> 1; st)).
   - apply E_Asgn. reflexivity.
-  - induction (st X) eqn:EqX.
-    + 
-
-  induction (st X) eqn: EqhX.
-  - intros. unfold not in H. assert (H0: 0 = 0) by reflexivity.
-    apply H in H0. destruct H0.
-  - intros H. apply IHn.
+  - inversion H. assert (H2 : (X !-> st X; Z !-> S (st X); st) = (Z !-> S (st X); st)). {
+      rewrite t_update_permute.
+      - rewrite t_update_same. reflexivity.
+      - unfold not. intros. discriminate H0.
+    }
+    rewrite H2. apply E_WhileFalse. simpl. rewrite H. unfold t_update. simpl.
+    rewrite H. reflexivity.
+Qed.
 
 Theorem p3_p4_inequiv : ~ cequiv p3 p4.
 Proof.
@@ -2211,31 +2212,59 @@ Proof.
   unfold p4.
   unfold cequiv.
   intros.
+
+  (* 
+    Prove -> direction of cequiv does not hold
+   *)
+  
+  pose proof (H (X !-> 1) (Z !-> 5 ; X !-> 2)).
+
+  destruct H0.
+  clear H1.
+
+  assert (H1: (X !-> 1) =[ Z := 1; while X <> 0 do havoc X; havoc Z end ]=> (Z !-> 5; X !-> 2)). {
+    apply E_Seq with (st' := (Z !-> 1 ; X !-> 1)).
+    - apply E_Asgn. reflexivity.
+    - apply E_WhileTrue with (st' := (Z !-> 5; X !-> 2)).
+      + reflexivity.
+      + apply E_Seq with (st' := (Z !-> 5; X !-> 1)).
+        * apply E_Havoc.
+      +  
+  }
+
+  (* ------------------------ *)
+
   remember empty_st as st.
-  specialize (H empty_st empty_st).
   assert (H0 : st = (X !-> 0 ; st)).
   {
     rewrite Heqst. unfold empty_st. rewrite t_update_same. reflexivity.
   }
-  assert (H1: st =[X := 0]=> (X!-> 0; st)).
+  assert (H2: st =[X := 0]=> (X!-> 0; st)).
   {
     apply E_Asgn. reflexivity.
   }
-  assert (H2: st =[ X := 0; Z := 1 ]=> (Z !-> 1; X !-> 0; st)).
+  assert (H3: st =[ X := 0; Z := 1 ]=> (Z !-> 1; X !-> 0; st)).
   {
     apply E_Seq with (st' := (X!-> 0; st)).
-    - apply H1.
+    - apply H2.
     - apply E_Asgn. reflexivity.
   }
-  clear H1.
-  apply H in H2.
-  rewrite H0 in H2.
-  inversion H2.
-  subst.
-  inversion H4.
-  subst.
+  clear H2.
+
+  
+
+
+
+  apply H in H3.
+
+  induction (st X) eqn:EqX.
+  - 
+  
+  inversion H3. subst.
   inversion H7.
-  - subst. simpl in H6.
+  - subst. simpl in H8.
+  - rewrite H0 in H4. inversion H4. rewrite <- H9 in H5. 
+    simpl in H5. discriminate H5.
 
 
 (** [] *)
