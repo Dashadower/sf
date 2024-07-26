@@ -2216,57 +2216,39 @@ Proof.
   (* 
     Prove -> direction of cequiv does not hold
    *)
-  
-  pose proof (H (X !-> 1) (Z !-> 5 ; X !-> 2)).
-
+  pose proof (H (X !-> 1) (Z !-> 5 ; X !-> 0)).
   destruct H0.
   clear H1.
 
-  assert (H1: (X !-> 1) =[ Z := 1; while X <> 0 do havoc X; havoc Z end ]=> (Z !-> 5; X !-> 2)). {
+  assert (H1: (X !-> 1) =[ Z := 1; while X <> 0 do havoc X; havoc Z end ]=> (Z !-> 5; X !-> 0)). {
     apply E_Seq with (st' := (Z !-> 1 ; X !-> 1)).
     - apply E_Asgn. reflexivity.
-    - apply E_WhileTrue with (st' := (Z !-> 5; X !-> 2)).
+    - apply E_WhileTrue with (st' := (Z !-> 5; X !-> 0)).
       + reflexivity.
-      + apply E_Seq with (st' := (Z !-> 5; X !-> 1)).
-        * apply E_Havoc.
-      +  
+      + apply E_Seq with (st' := (Z !-> 1; X !-> 0)).
+        * rewrite t_update_permute with (v2 := 0). 
+          ** rewrite t_update_permute.
+             *** rewrite <- t_update_shadow with (x := X) (v2 := 0) (v1 := 1) (m := (Z !-> 1)).
+                 apply E_Havoc.
+             *** unfold not. intros. discriminate H1.
+          ** unfold not. intros. discriminate H1.
+        * rewrite <- t_update_shadow with (x := Z) (v2 := 5) (v1 := 1).
+          apply E_Havoc.
+      + apply E_WhileFalse. reflexivity.
   }
-
-  (* ------------------------ *)
-
-  remember empty_st as st.
-  assert (H0 : st = (X !-> 0 ; st)).
-  {
-    rewrite Heqst. unfold empty_st. rewrite t_update_same. reflexivity.
+  apply H0 in H1.
+  inversion H1. subst.
+  inversion H4. subst.
+  clear H1.
+  clear H4.
+  inversion H7. subst.
+  simpl in H5.
+  remember (Z !-> 5; X !-> 0) as st.
+  assert (H1 : st Z = 5). {
+    rewrite Heqst. reflexivity.
   }
-  assert (H2: st =[X := 0]=> (X!-> 0; st)).
-  {
-    apply E_Asgn. reflexivity.
-  }
-  assert (H3: st =[ X := 0; Z := 1 ]=> (Z !-> 1; X !-> 0; st)).
-  {
-    apply E_Seq with (st' := (X!-> 0; st)).
-    - apply H2.
-    - apply E_Asgn. reflexivity.
-  }
-  clear H2.
-
-  
-
-
-
-  apply H in H3.
-
-  induction (st X) eqn:EqX.
-  - 
-  
-  inversion H3. subst.
-  inversion H7.
-  - subst. simpl in H8.
-  - rewrite H0 in H4. inversion H4. rewrite <- H9 in H5. 
-    simpl in H5. discriminate H5.
-
-
+  rewrite <- H5 in H1. discriminate H1.
+Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (p5_p6_equiv)
