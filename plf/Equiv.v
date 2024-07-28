@@ -2334,6 +2334,13 @@ End Himp.
     (Hint: You may or may not -- depending how you approach it -- need
     to use [functional_extensionality] explicitly for this one.) *)
 
+(* 
+Lemma aeval_weakening : forall x st a ni,
+  var_not_used_in_aexp x a ->
+  aeval (x !-> ni ; st) a = aeval st a.
+  (* If x isn't used in a, it doesn't matter what state you evaluate a in. *)
+ *)
+
 Theorem swap_noninterfering_assignments: forall l1 l2 a1 a2,
   l1 <> l2 ->
   var_not_used_in_aexp l1 a2 ->
@@ -2342,7 +2349,25 @@ Theorem swap_noninterfering_assignments: forall l1 l2 a1 a2,
     <{ l1 := a1; l2 := a2 }>
     <{ l2 := a2; l1 := a1 }>.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros.
+  unfold cequiv.
+  split; intros.
+  - inversion H2. inversion H5. inversion H8. subst.
+    apply E_Seq with (st' := (l2 !-> aeval st a2 ; st)).
+    + apply E_Asgn. reflexivity.
+    + apply aeval_weakening with (st := st) (ni := aeval st a1)in H0. rewrite H0.
+      rewrite t_update_permute.
+      * apply E_Asgn. apply aeval_weakening with (st := st) (ni := aeval st a2) in H1. apply H1.
+      * apply H.
+  - inversion H2. inversion H5. inversion H8. subst.
+    apply E_Seq with (st' := (l1 !-> aeval st a1 ; st)).
+    + apply E_Asgn. reflexivity.
+    + apply aeval_weakening with (st := st) (ni := aeval st a2) in H1. rewrite H1.
+      rewrite t_update_permute.
+      * apply E_Asgn. apply aeval_weakening with (st := st) (ni := aeval st a1) in H0. rewrite H0. reflexivity.
+      * symmetry. apply H.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, standard, optional (for_while_equiv)
@@ -2364,6 +2389,8 @@ Proof.
        end
 *)
 (* FILL IN HERE
+
+Already done in previous version of Imp.
 
     [] *)
 
@@ -2393,22 +2420,52 @@ Definition capprox (c1 c2 : com) : Prop := forall (st st' : state),
 (** Find two programs [c3] and [c4] such that neither approximates
     the other. *)
 
-Definition c3 : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-Definition c4 : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+(* capprox c1 c2 /\ capprox c2 a1 <-> cequiv c1 c2*)
+
+Definition c3 : com := 
+  <{X := 1}>.
+Definition c4 : com :=
+  <{X := 2}>.
 
 Theorem c3_c4_different : ~ capprox c3 c4 /\ ~ capprox c4 c3.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  unfold not.
+  unfold capprox.
+  unfold c3.
+  unfold c4.
+  split; intro contra.
+  - specialize (contra empty_st (X !-> 1)).
+    assert (H : empty_st =[ X := 1 ]=> (X !-> 1)). {
+      apply E_Asgn. reflexivity.
+    }
+    apply contra in H. inversion H. subst. simpl in H4.
+    assert (H1 : aeval (X !-> 1) X = 1) by reflexivity.
+    rewrite <- H4 in H1. simpl in H1. discriminate H1.
+  - specialize (contra empty_st (X !-> 2)).
+    assert (H1 : empty_st =[ X := 2 ]=> (X !-> 2)). {
+      apply E_Asgn. reflexivity.
+    }
+    apply contra in H1. inversion H1. subst. simpl in H4.
+    assert (H2 : aeval (X !-> 1) X = 1 ) by reflexivity.
+    rewrite H4 in H2. simpl in H2. discriminate H2.
+Qed.
 
 (** Find a program [cmin] that approximates every other program. *)
 
-Definition cmin : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition cmin : com := (* just make antecedent false :D *)
+  <{while true do skip end}>.
 
 Theorem cmin_minimal : forall c, capprox cmin c.
-Proof. (* FILL IN HERE *) Admitted.
-
+Proof.
+  unfold capprox.
+  unfold cmin.
+  intros.
+  remember <{ while true do skip end }> as loopdef eqn:Heqloopdef.
+  induction H; try discriminate Heqloopdef.
+  - inversion Heqloopdef. subst. simpl in H. discriminate H.
+  - inversion Heqloopdef. subst. clear Heqloopdef. inversion H0.
+    subst. apply IHceval2. reflexivity.
+Qed.
 (** Finally, find a non-trivial property which is preserved by
     program approximation (when going from left to right). *)
 
