@@ -330,7 +330,7 @@ End ExamplePrettyAssertions.
       {{X = 100}}
 *)
 (* FILL IN HERE
-
+    1, 2, 3, 4, 6, 8
     [] *)
 
 (* ################################################################# *)
@@ -360,7 +360,11 @@ Theorem hoare_post_true : forall (P Q : Assertion) c,
   (forall st, Q st) ->
   {{P}} c {{Q}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold valid_hoare_triple.
+  intros.
+  apply H.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, standard (hoare_pre_false) *)
@@ -372,7 +376,10 @@ Theorem hoare_pre_false : forall (P Q : Assertion) c,
   (forall st, ~ (P st)) ->
   {{P}} c {{Q}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold valid_hoare_triple.
+  intros.
+  apply H in H1. destruct H1.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -650,7 +657,9 @@ Example hoare_asgn_examples1 :
       X := 2 * X
     {{ X <= 10 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists ((X <= 10) [X |-> 2 * X]).
+  apply hoare_asgn.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (hoare_asgn_examples2) *)
@@ -659,7 +668,10 @@ Example hoare_asgn_examples2 :
     {{ P }}
       X := 3
     {{ 0 <=  X /\ X <= 5 }}.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+  exists ((0 <=  X /\ X <= 5) [X |-> 3]).
+  apply hoare_asgn.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, especially useful (hoare_asgn_wrong)
@@ -681,10 +693,15 @@ Proof. (* FILL IN HERE *) Admitted.
 Theorem hoare_asgn_wrong : exists a:aexp,
   ~ {{ True }} X := a {{ X = a }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(* FILL IN HERE
-
-    [] *)
+  unfold not. exists (<{X + 1}>).
+  intros contra.
+  unfold valid_hoare_triple in contra.
+  specialize (contra empty_st (X !-> 1)).
+  assert (H : empty_st =[ X := X + 1 ]=> (X !-> 1)) by (apply E_Asgn; reflexivity).
+  apply contra in H.
+  - simpl in H. discriminate H.
+  - simpl. constructor.
+Qed.
 
 (** **** Exercise: 3 stars, advanced (hoare_asgn_fwd)
 
