@@ -2269,8 +2269,59 @@ Definition p5 : com :=
 Definition p6 : com :=
   <{ X := 1 }>.
 
+Lemma st_extension : forall x n (st : state),
+  st x = n -> st = (x !-> n; st).
+Proof.
+  intros. 
+  inversion H.
+  rewrite t_update_same. reflexivity.
+Qed.
+
+Lemma while_loop_postcondition : forall (x : string) (n : nat) (st st' : state),
+  st =[ while x <> n do havoc x end ]=> st' -> st' = (x !-> n ; st).
+Proof.
+  intros.
+  inversion H.
+  - inversion H4. apply negb_false_iff in H6. apply eqb_eq in H6.
+    apply st_extension in H6. rewrite H6 at 1. reflexivity.
+  - subst. 
+    assert (H1: st =[ while x <> n do havoc x end ]=> (x !-> n ; st)). {
+      apply E_WhileTrue with (st' := st'0).
+      - apply H2.
+      - apply H3.
+      - inversion H3. admit.
+    }
+Abort.
+
 Theorem p5_p6_equiv : cequiv p5 p6.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  unfold cequiv.
+  unfold p5.
+  unfold p6.
+  split; intros.
+  - remember <{ while X <> 1 do havoc X end }> as loop.
+    induction H; try inversion Heqloop.
+    + subst. inversion H. apply negb_false_iff in H1. apply eqb_eq in H1.
+      assert (H2 : st = (X !-> 1; st)). {
+        apply st_extension in H1. apply H1.
+      }
+      rewrite H2 at 2. apply E_Asgn. reflexivity.
+    + subst. clear Heqloop. 
+      assert (H2 : <{ while X <> 1 do havoc X end }> = <{ while X <> 1 do havoc X end }>) by reflexivity.
+      apply IHceval2 in H2. inversion H2. subst.
+      inversion H0. subst. simpl. rewrite t_update_shadow.
+      apply E_Asgn. reflexivity.
+  - inversion H. subst.
+    destruct (beval st <{X <> 1}>) eqn:Eqb.
+    + apply E_WhileTrue with (st' := (X !-> 1; st)).
+      * apply Eqb.
+      * apply E_Havoc.
+      * apply E_WhileFalse. simpl. reflexivity.
+    + inversion Eqb. apply negb_false_iff in H1. apply eqb_eq in H1.
+      apply st_extension in H1. rewrite H1. simpl. rewrite t_update_shadow.
+      apply E_WhileFalse. rewrite <- H1. apply Eqb.
+Qed.
+
 (** [] *)
 
 End Himp.
