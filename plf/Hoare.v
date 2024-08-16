@@ -1099,14 +1099,20 @@ Example assertion_sub_ex1' :
     X := 2 * X
   {{ X <= 10 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply hoare_consequence_pre.
+  - apply hoare_asgn.
+  - assertion_auto.
+Qed.
 
 Example assertion_sub_ex2' :
   {{ 0 <= 3 /\ 3 <= 5 }}
     X := 3
   {{ 0 <= X /\ X <= 5 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply hoare_consequence_pre.
+  - apply hoare_asgn.
+  - unfold "->>". intros. assertion_auto.
+Qed.
 
 (** [] *)
 
@@ -1171,7 +1177,7 @@ Example hoare_asgn_example4 :
 Proof.
   eapply hoare_seq with (Q := (X = 1)%assertion).
   (* The annotation [%assertion] is needed to help Coq parse correctly. *)
-  (* FILL IN HERE *) Admitted.
+  - 
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (swap_exercise)
