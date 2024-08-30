@@ -921,7 +921,7 @@ Qed.
 
 Hint Unfold assert_implies assertion_sub t_update : core.
 Hint Unfold valid_hoare_triple : core.
-Hint Unfold assert_of_Prop Aexp_of_nat Aexp_of_aexp : core.
+Hint Unfold assert_of_Prop Aexp_of_nat Aexp_of_aexp : core.  
 
 (** Also recall that [auto] will search for a proof involving [intros]
     and [apply].  By default, the theorems that it will apply include
@@ -933,6 +933,7 @@ Hint Unfold assert_of_Prop Aexp_of_nat Aexp_of_aexp : core.
     is [unfold], [intros], and [apply].  (It uses [assumption], too,
     but that's just application of a hypothesis.) *)
 
+
 Theorem hoare_consequence_pre' : forall (P P' Q : Assertion) c,
   {{P'}} c {{Q}} ->
   P ->> P' ->
@@ -940,7 +941,7 @@ Theorem hoare_consequence_pre' : forall (P P' Q : Assertion) c,
 Proof.
   unfold valid_hoare_triple, "->>".
   intros P P' Q c Hhoare Himp st st' Heval Hpre.
-  apply Hhoare with (st := st).
+  apply Hhoare with (st := st).  
   - assumption.
   - apply Himp. assumption.
 Qed.
@@ -1177,7 +1178,13 @@ Example hoare_asgn_example4 :
 Proof.
   eapply hoare_seq with (Q := (X = 1)%assertion).
   (* The annotation [%assertion] is needed to help Coq parse correctly. *)
-  - 
+  - eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + assertion_auto.
+  - eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + assertion_auto.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (swap_exercise)
@@ -1198,15 +1205,35 @@ Proof.
          and work back to the beginning of your program.
        - Remember that [eapply] is your friend.)  *)
 
-Definition swap_program : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition swap_program : com :=
+  <{X := 1; Y := 2; Y := X + Y; X := Y - X; Y := Y - X}>.
 
 Theorem swap_exercise :
   {{X <= Y}}
     swap_program
   {{Y <= X}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold swap_program.
+  eapply hoare_seq with (Q := (X = 1)%assertion).
+  - eapply hoare_seq with (Q := (X = 1 /\ Y = 2)%assertion).
+    + eapply hoare_seq with (Q := (X = 1 /\ Y = 3)%assertion).
+      * eapply hoare_seq with (Q := (X = 2 /\ Y = 3)%assertion).
+        ** eapply hoare_consequence_pre.
+           *** eapply hoare_asgn.
+           *** assertion_auto.
+        ** eapply hoare_consequence_pre.
+           *** apply hoare_asgn.
+           *** assertion_auto.
+      * eapply hoare_consequence_pre.
+        ** apply hoare_asgn.
+        ** assertion_auto.
+    + eapply hoare_consequence_pre.
+      * apply hoare_asgn.
+      * assertion_auto.
+  - eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + assertion_auto.
+Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (invalid_triple)
