@@ -1274,7 +1274,17 @@ Theorem invalid_triple : ~ forall (a : aexp) (n : nat),
 Proof.
   unfold valid_hoare_triple.
   intros H.
-  (* FILL IN HERE *) Admitted.
+  specialize H with (a := <{X - 3}>) (n := 1).
+  assert (H1: (X !-> 4) =[ X := 3; Y := X - 3 ]=> (X !-> 3 ; Y !-> 0)).
+  - apply E_Seq with (st' := (X !-> 3 ; X !-> 4)).
+    + apply E_Asgn. reflexivity.
+    + rewrite t_update_shadow. rewrite t_update_permute.
+      * apply E_Asgn. reflexivity.
+      * unfold not. intros. discriminate H0.
+  - apply H in H1.
+    + simpl in H1. discriminate H1.
+    + reflexivity.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
