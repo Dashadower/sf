@@ -1478,7 +1478,14 @@ Theorem if_minus_plus :
     end
   {{Y = X + Z}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply hoare_if.
+  - eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + assertion_auto''.
+  - eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + assertion_auto''.
+Qed.
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -1563,7 +1570,13 @@ Inductive ceval : com -> state -> state -> Prop :=
       st  =[ c ]=> st' ->
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
-(* FILL IN HERE *)
+  | E_If1True : forall st st' b c,
+      beval st b = true ->
+      st =[ c ]=> st' ->
+      st =[ if1 b then c end ]=> st'
+  | E_If1False : forall st b c,
+      beval st b = false ->
+      st =[ if1 b then c end ]=> st
 
 where "st '=[' c ']=>' st'" := (ceval c st st').
 
@@ -1574,11 +1587,11 @@ Hint Constructors ceval : core.
 
 Example if1true_test :
   empty_st =[ if1 X = 0 then X := 1 end ]=> (X !-> 1).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. eauto. Qed.
 
 Example if1false_test :
   (X !-> 2) =[ if1 X = 0 then X := 1 end ]=> (X !-> 2).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. eauto. Qed.
 
 (** [] *)
 
@@ -1614,7 +1627,32 @@ Notation "{{ P }}  c  {{ Q }}" := (valid_hoare_triple P c Q)
     be in the assertion scope.  For example, if you want [e] to be
     parsed as an assertion, write it as [(e)%assertion]. *)
 
-(* FILL IN HERE *)
+(* 
+  {P /\ b} c {Q}
+  {P /\ ~b} skip {Q}
+  ------------------------
+  {P} if1 b then c end {Q} 
+*)
+
+Theorem hoare_if1 : forall P Q (b:bexp) c,
+  {{P /\ b}} c {{Q}} -> {{P /\ ~b}} <{skip}> {{Q}} ->
+  {{P}} <{if1 b then c end}> {{Q}}.
+Proof.
+  intros P Q b c H H1.
+  unfold valid_hoare_triple.
+  intros.
+  inversion H0; subst.
+  - unfold valid_hoare_triple in H. apply H with (st := st) (st' := st').
+    + apply H8.
+    + split.
+      * apply H2.
+      * simpl. assumption.
+  - unfold valid_hoare_triple in H1. apply H1 with (st := st') (st' := st').
+    + apply E_Skip.
+    + simpl. split; auto. unfold not. intros. rewrite H3 in H7. discriminate H7. 
+Qed.
+
+
 
 (** For full credit, prove formally ([hoare_if1_good]) that your rule is
     precise enough to show the following Hoare triple is valid:
@@ -1662,13 +1700,34 @@ Qed.
     definition or theorem [e.g., hoare_skip] from above this exercise
     without re-proving it for the new version of Imp with if1. *)
 
+Theorem hoare_skip : forall P,
+  {{P}} <{skip}> {{P}}.
+Proof.
+  unfold valid_hoare_triple. intros.
+  inversion H. subst. assumption.
+Qed.
+
 Lemma hoare_if1_good :
   {{ X + Y = Z }}
     if1 Y <> 0 then
       X := X + Y
     end
   {{ X = Z }}.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+  apply hoare_if1.
+  - eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + assertion_auto''.
+  - eapply hoare_consequence_pre.
+    + apply hoare_skip.
+    + unfold "->>". intros. destruct H. unfold not in H0.
+      destruct (st Y) eqn:EqY.
+      * simpl in *. rewrite EqY in H. rewrite add_comm in H. simpl in H. assumption.
+      * simpl in *. rewrite EqY in H0. simpl in H0. assert (H1: true = true) by reflexivity. 
+        apply H0 in H1. destruct H1.
+Qed.
+
+
 (** [] *)
 
 End If1.
@@ -1895,7 +1954,15 @@ Inductive ceval : state -> com -> state -> Prop :=
       st  =[ c ]=> st' ->
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
-(* FILL IN HERE *)
+  | E_Repeat : forall st st' st'' b c,
+      st =[ c ]=> st' ->
+      beval st' b = false ->
+      st' =[ repeat c until b end ]=> st'' ->
+      st =[ repeat c until b end ]=> st''
+  | E_RepeatExit : forall st st' b c,
+      st =[ c ]=> st' ->
+      beval st' b = true ->
+      st =[ repeat c until b end ]=> st'
 
 where "st '=[' c ']=>' st'" := (ceval st c st').
 
@@ -1921,7 +1988,7 @@ Definition ex1_repeat :=
 Theorem ex1_repeat_works :
   empty_st =[ ex1_repeat ]=> (Y !-> 1 ; X !-> 1).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold ex1_repeat.
 
 (** Now state and prove a theorem, [hoare_repeat], that expresses an
     appropriate proof rule for [repeat] commands.  Use [hoare_while]
