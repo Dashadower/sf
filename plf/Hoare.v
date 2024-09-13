@@ -1989,6 +1989,12 @@ Theorem ex1_repeat_works :
   empty_st =[ ex1_repeat ]=> (Y !-> 1 ; X !-> 1).
 Proof.
   unfold ex1_repeat.
+  apply E_RepeatExit.
+  - apply E_Seq with (st' := (X !-> 1)).
+    + apply E_Asgn. reflexivity.
+    + apply E_Asgn. reflexivity.
+  - reflexivity.
+Qed.
 
 (** Now state and prove a theorem, [hoare_repeat], that expresses an
     appropriate proof rule for [repeat] commands.  Use [hoare_while]
