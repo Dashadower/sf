@@ -2356,7 +2356,20 @@ Theorem assert_assume_differ : exists (P:Assertion) b (Q:Assertion),
        ({{P}} assume b {{Q}})
   /\ ~ ({{P}} assert b {{Q}}).
 Proof.
-  
+  exists True.
+  exists BFalse.
+  exists False.
+  split; unfold valid_hoare_triple.
+  - intros. inversion H. subst. simpl in H2. discriminate H2.
+  - unfold not. intros. specialize (H empty_st RError).
+    assert (H0: empty_st =[ assert false ]=> RError). {
+      apply E_AssertFalse. reflexivity.
+    }
+    apply H in H0.
+    + destruct H0 as [st [H0 _]]. discriminate H0.
+    + reflexivity.
+Qed.
+
 
 (** Then prove that any triple for an [assert] also works when
     [assert] is replaced by [assume]. *)
@@ -2365,7 +2378,14 @@ Theorem assert_implies_assume : forall P b Q,
      ({{P}} assert b {{Q}})
   -> ({{P}} assume b {{Q}}).
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros P b Q H.
+  unfold valid_hoare_triple in *.
+  intros.
+  apply H with (st := st).
+  - inversion H0. subst. apply E_AssertTrue. apply H3.
+  - assumption.
+Qed.
+  
 
 (** Next, here are proofs for the old hoare rules adapted to the new
     semantics.  You don't need to do anything with these. *)
@@ -2487,7 +2507,31 @@ Qed.
     to prove a simple program correct.  Name your rules [hoare_assert]
     and [hoare_assume]. *)
 
-(* FILL IN HERE *)
+(*
+assert
+{P /\ b} assert b {P /\ b}
+
+*)
+Theorem hoare_assume : forall P (b : bexp),
+  {{P /\ b}} assume b {{P /\ b}}.
+Proof.
+  unfold valid_hoare_triple. intros.
+  exists st.
+  inversion H. subst. destruct H0.
+  repeat (try split; try reflexivity; try assumption).
+Qed.
+
+Theorem hoare_assert : forall P (b : bexp),
+  {{P /\ b}} assert b {{P /\ b}}.
+Proof.
+  unfold valid_hoare_triple. intros.
+  destruct H0.
+  exists st.
+  inversion H; subst.
+  - repeat (try split; try reflexivity; try assumption).
+  - simpl in H1. rewrite H1 in H3. discriminate H3.
+Qed.
+
 
 (** Use your rules to prove the following triple. *)
 
@@ -2498,7 +2542,11 @@ Example assert_assume_example:
     assert (X = 2)
   {{True}}.
 Proof.
-(* FILL IN HERE *) Admitted.
+  apply hoare_consequence_pre with (P' := (True /\ X = 1)%assertion).
+  - admit.
+  - unfold "->>". intros.
+  - apply hoare_consequence_post with (Q' := (True /\ X = 2)%assertion).
+    + 
 
 End HoareAssertAssume.
 (** [] *)
