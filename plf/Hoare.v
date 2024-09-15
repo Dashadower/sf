@@ -2000,7 +2000,27 @@ Qed.
     appropriate proof rule for [repeat] commands.  Use [hoare_while]
     as a model, and try to make your rule as precise as possible. *)
 
-(* FILL IN HERE *)
+(*
+            {{P /\ b}} c {{P}}
+      --------------------------------- (hoare_while)
+      {{P} while b do c end {{P /\ ~b}}
+repeat c until b
+{P} c {P}
+
+------------------
+{P } repeat c until b {P /\ b}
+*)
+
+Theorem hoare_repeat : forall P (b:bexp) c,
+  {{P}} c {{P}} ->
+  {{P}} repeat c until b end {{P /\ b}}.
+Proof.
+  intros P b c Hhoare st st' Heval HP.
+  remember <{repeat c until b end}> as original_command eqn:Horig.
+  induction Heval;
+    try (inversion Horig; subst; clear Horig);
+    eauto.
+Qed.
 
 (** For full credit, make sure (informally) that your rule can be used
     to prove the following valid Hoare triple:
@@ -2165,13 +2185,18 @@ Proof. eauto. Qed.
 (** Complete the Hoare rule for [HAVOC] commands below by defining
     [havoc_pre], and prove that the resulting rule is correct. *)
 
-Definition havoc_pre (X : string) (Q : Assertion) (st : total_map nat) : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition havoc_pre (X : string) (Q : Assertion) (st : total_map nat) : Prop :=
+  forall n, Q (X !-> n ; st).
 
 Theorem hoare_havoc : forall (Q : Assertion) (X : string),
   {{ havoc_pre X Q }} havoc X {{ Q }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold havoc_pre, valid_hoare_triple.
+  intros.
+  inversion H. subst.
+  apply H0.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (havoc_post)
@@ -2189,7 +2214,9 @@ Theorem havoc_post : forall (P : Assertion) (X : string),
 Proof.
   intros P X. eapply hoare_consequence_pre.
   - apply hoare_havoc.
-  - (* FILL IN HERE *) Admitted.
+  - unfold havoc_pre, "->>", assertion_sub. intros. exists (st X). simpl.
+    rewrite t_update_shadow. rewrite t_update_same. apply H.
+Qed.
 
 (** [] *)
 
@@ -2328,7 +2355,8 @@ Notation "{{ P }}  c  {{ Q }}" :=
 Theorem assert_assume_differ : exists (P:Assertion) b (Q:Assertion),
        ({{P}} assume b {{Q}})
   /\ ~ ({{P}} assert b {{Q}}).
-(* FILL IN HERE *) Admitted.
+Proof.
+  
 
 (** Then prove that any triple for an [assert] also works when
     [assert] is replaced by [assume]. *)
