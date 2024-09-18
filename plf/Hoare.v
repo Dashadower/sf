@@ -2315,7 +2315,7 @@ Inductive ceval : com -> state -> result -> Prop :=
       beval st b = true ->
       st  =[ c ]=> RNormal st' ->
       st' =[ while b do c end ]=> r ->
-      st  =[ while b do c end ]=> r
+      st  =[ while b do c end ]=> r 
   | E_WhileTrueError : forall st b c,
       beval st b = true ->
       st =[ c ]=> RError ->
@@ -2511,13 +2511,26 @@ Qed.
 assert
 {P /\ b} assert b {P /\ b}
 
+assume - program goes on and b holds in concluding state
+
 *)
-Theorem hoare_assume : forall P (b : bexp),
+(* Theorem hoare_assume : forall P (b : bexp),
   {{P /\ b}} assume b {{P /\ b}}.
 Proof.
   unfold valid_hoare_triple. intros.
   exists st.
   inversion H. subst. destruct H0.
+  repeat (try split; try reflexivity; try assumption).
+Qed. *)
+
+(* Set Printing All. *)
+
+Theorem hoare_assume : forall P (b : bexp),
+  {{P}} assume b {{P /\ b}}.
+Proof.
+  unfold valid_hoare_triple. intros.
+  exists st.
+  inversion H. subst. 
   repeat (try split; try reflexivity; try assumption).
 Qed.
 
@@ -2535,6 +2548,38 @@ Qed.
 
 (** Use your rules to prove the following triple. *)
 
+(* Set Printing All. *)
+
+Print hoare_assert.
+Print hoare_assume.
+
+Lemma inverse_asgn : forall st,
+  bassertion <{X = 1}> st -> bassertion <{ X = 2 }> (X !-> aeval st <{ X + 1 }>; st).
+Proof.
+  intros. unfold bassertion in *. simpl.
+  inversion H. rewrite H1. rewrite eqb_eq in H1. rewrite H1.
+  simpl. reflexivity.
+Qed.
+
+
+
+Lemma asgn_1 : forall st,
+  bassertion <{X = 1}> st = bassertion <{X + 1 = 2}> st.
+Proof.
+  unfold bassertion.
+  intros. simpl.
+  destruct (st X =? 1) eqn:Eqb.
+  - rewrite eqb_eq in Eqb. rewrite Eqb. reflexivity.
+  - rewrite add_comm. rewrite add_1_l. 
+    assert (H: forall n m, (S n =? S m) = (n =? m)). {
+      intros n.
+      induction m.
+      - simpl. reflexivity.
+      - simpl. reflexivity.
+    }
+    rewrite H. rewrite Eqb. reflexivity.
+Qed.
+
 Example assert_assume_example:
   {{True}}
     assume (X = 1);
@@ -2542,11 +2587,35 @@ Example assert_assume_example:
     assert (X = 2)
   {{True}}.
 Proof.
-  apply hoare_consequence_pre with (P' := (True /\ X = 1)%assertion).
-  - admit.
-  - unfold "->>". intros.
-  - apply hoare_consequence_post with (Q' := (True /\ X = 2)%assertion).
-    + 
+  eapply hoare_consequence_post.
+  - eapply hoare_seq.
+    + eapply hoare_seq.
+      * apply hoare_assert.
+      * apply hoare_asgn.
+    + eapply hoare_consequence_post.
+      * apply hoare_assume.
+      * 
+
+  apply hoare_consequence_post with (Q' := (True /\ <{ X = 2 }>)%assertion).
+  - apply hoare_seq with (Q := (True /\ <{X = 1}>)%assertion).
+    + apply hoare_seq with (Q := (True /\ <{X = 2}>)%assertion).
+      * apply hoare_assert.
+      * apply hoare_consequence_post with (Q' := ( bassertion <{X = 2}> )).
+        ** apply hoare_consequence_pre with (P' := (bassertion <{X + 1= 2}>)).
+            *** apply hoare_asgn.
+
+  - eapply hoare_consequence_post.
+    + eapply hoare_seq.
+      * eapply hoare_seq.
+        ** apply hoare_assert.
+        ** apply hoare_asgn.
+      * apply hoare_consequence_post with (Q' := bassertion <{X = 1}>).
+        ** unfold valid_hoare_triple. unfold bassertion. intros.
+           inversion H. subst. exists st. split; try reflexivity; try assumption.
+        ** unfold "->>". intros. unfold assertion_sub. split.
+           *** admit.
+           *** apply inverse_asgn. assumption.
+  - unfold "->>". intros. destruct H. assumption.
 
 End HoareAssertAssume.
 (** [] *)
