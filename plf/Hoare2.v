@@ -195,20 +195,22 @@ These decorations can be constructed as follows:
 (*
   {{ True }}
     if X <= Y then
-              {{                         }} ->>
-              {{                         }}
+              {{ X <= Y /\ True                     }} ->> (Strengthen)
+              {{ Y = X + Y - X                      }}
       Z := Y - X
-              {{                         }}
+              {{ Y = X + Z                          }}
     else
-              {{                         }} ->>
-              {{                         }}
+              {{ X > Y /\ True                      }} ->>
+              {{ X + Z = X + Z                      }}
       Y := X + Z
-              {{                         }}
+              {{ Y = X + Z                          }}
     end
   {{ Y = X + Z }}
 *)
 (**
     Briefly justify each use of [->>].
+The consequent of the first strenghtening is a tautology
+The second is also a tautology
 *)
 
 (** [] *)

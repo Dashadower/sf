@@ -2594,9 +2594,9 @@ Proof.
       * apply hoare_asgn.
     + eapply hoare_consequence_post.
       * apply hoare_assume.
-      * 
+      * Admitted.
 
-  apply hoare_consequence_post with (Q' := (True /\ <{ X = 2 }>)%assertion).
+  (* apply hoare_consequence_post with (Q' := (True /\ <{ X = 2 }>)%assertion).
   - apply hoare_seq with (Q := (True /\ <{X = 1}>)%assertion).
     + apply hoare_seq with (Q := (True /\ <{X = 2}>)%assertion).
       * apply hoare_assert.
@@ -2616,7 +2616,7 @@ Proof.
            *** admit.
            *** apply inverse_asgn. assumption.
   - unfold "->>". intros. destruct H. assumption.
-
+*)
 End HoareAssertAssume.
 (** [] *)
 
