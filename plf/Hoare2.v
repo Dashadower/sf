@@ -137,7 +137,7 @@ Definition FILL_IN_HERE := <{True}>.
         [X] with [X - Y] in (5), and we obtain (3) by substituting [Y]
         with [X - Y] in (4).
 
-    Finally, we verify that (1) logically implies (2) -- i.e., that
+    Finally, we verify that (1) logically implies (2)  -- i.e., that
     the step from (1) to (2) is a valid use of the law of
     consequence -- by doing a bit of high-school algebra.
  *)
@@ -160,7 +160,7 @@ Definition FILL_IN_HERE := <{True}>.
       (7)                    {{ Z + X = Y \/ Z + Y = X }}
               end
       (8)   {{ Z + X = Y \/ Z + Y = X }}
-
+  
 These decorations can be constructed as follows:
 
   - We start with the outer precondition (1) and postcondition (8).
