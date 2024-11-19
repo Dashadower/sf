@@ -1022,51 +1022,59 @@ Definition if_minus_plus_dec :=
   <{
   {{True}}
   if (X <= Y) then
-              {{ FILL_IN_HERE }} ->>
-              {{ FILL_IN_HERE }}
+              {{ X <= Y }} ->>
+              {{ Y = X + (Y - X) }}
     Z := Y - X
-              {{ FILL_IN_HERE }}
+              {{ Y = X + Z }}
   else
-              {{ FILL_IN_HERE }} ->>
-              {{ FILL_IN_HERE }}
+              {{ X > Y }} ->>
+              {{ X + Z = X + Z }}
     Y := X + Z
-              {{ FILL_IN_HERE }}
+              {{ Y = X + Z }}
   end
   {{ Y = X + Z}} }>.
+
+
 
 Theorem if_minus_plus_correct :
   outer_triple_valid if_minus_plus_dec.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  verify.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (div_mod_outer_triple_valid)
 
     Fill in appropriate assertions for the division program from above. *)
 
+(* If we replace a and b by concrete numbers and execute the program, 
+   it will terminate with the variable X set to the remainder when a 
+   is divided by b and Y set to the quotient. *)
+
 Definition div_mod_dec (a b : nat) : decorated :=
   <{
   {{ True }} ->>
-  {{ FILL_IN_HERE }}
+  {{ b * 0 + a = a }}
     X := a
-             {{ FILL_IN_HERE }};
+             {{ b * 0 + X = a }};
     Y := 0
-             {{ FILL_IN_HERE }};
+             {{ b * Y + X = a }};
     while b <= X do
-             {{ FILL_IN_HERE }} ->>
-             {{ FILL_IN_HERE }}
+             {{ b * Y + X = a /\ b <= X }} ->>
+             {{ b * (Y + 1) + (X - b) = a }}
       X := X - b
-             {{ FILL_IN_HERE }};
+             {{ b * (Y + 1) + X = a }};
       Y := Y + 1
-             {{ FILL_IN_HERE }}
+             {{ b * Y + X = a }}
     end
-  {{ FILL_IN_HERE }} ->>
-  {{ FILL_IN_HERE }} }>.
+  {{ b * Y + X = a /\ ~(b <= X) }} ->>
+  {{ b * Y + X = a /\ X < b }} }>.
 
 Theorem div_mod_outer_triple_valid : forall a b,
   outer_triple_valid (div_mod_dec a b).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  verify.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1275,23 +1283,23 @@ Example slow_assignment_dec (m : nat) : decorated :=
   <{
     {{ X = m }}
       Y := 0
-                    {{ FILL_IN_HERE }} ->>
-                    {{ FILL_IN_HERE }} ;
+                    {{ X = m /\ Y = 0 }} ->>
+                    {{ Y + X = m }} ;
       while X <> 0 do
-                    {{ FILL_IN_HERE }} ->>
-                    {{ FILL_IN_HERE }}
+                    {{ Y + X = m /\ X <> 0 }} ->>
+                    {{ (Y + 1) + (X - 1) = m }}
          X := X - 1
-                    {{ FILL_IN_HERE }} ;
+                    {{ (Y + 1) + X = m }} ;
          Y := Y + 1
-                    {{ FILL_IN_HERE }}
+                    {{ Y + X = m }}
       end
-    {{ FILL_IN_HERE }} ->>
+    {{ Y + X = m /\ ~(X <> 0) }} ->>
     {{ Y = m }}
   }>.
 
 Theorem slow_assignment : forall m,
   outer_triple_valid (slow_assignment_dec m).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. verify. Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -1309,7 +1317,7 @@ Proof. (* FILL IN HERE *) Admitted.
     The [parity] function used in the specification is defined in
     Coq as follows: *)
 
-Fixpoint parity x :=
+Fixpoint parity x :=  (* isodd *)
   match x with
   | 0 => 0
   | 1 => 1
@@ -1354,17 +1362,19 @@ Fixpoint parity x :=
     [ap] operator to lift the application of the [parity] function
     into the syntax of assertions, [{{ ap parity X = parity m }}]. *)
 
+Print ap.
+
 Definition parity_dec (m:nat) : decorated :=
   <{
   {{ X = m }} ->>
-  {{ FILL_IN_HERE }}
+  {{ ap parity X = parity m }}
     while 2 <= X do
-                  {{ FILL_IN_HERE }} ->>
-                  {{ FILL_IN_HERE }}
+                  {{ ap parity X = parity m /\ 2 <= X }} ->>
+                  {{ ap parity (X - 2) = parity m }}
       X := X - 2
-                  {{ FILL_IN_HERE }}
+                  {{ ap parity X = parity m }}
     end
-  {{ FILL_IN_HERE }} ->>
+  {{ ap parity X = parity m /\ ~(2 <= X) }} ->>
   {{ X = parity m }} }>.
 
 (** If you use the suggested loop invariant, you may find the following
@@ -1392,10 +1402,27 @@ Proof.
     + lia.
 Qed.
 
+
 Theorem parity_outer_triple_valid : forall m,
   outer_triple_valid (parity_dec m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  verify.
+  - destruct (2 <=? (st X)) eqn:Eqb.
+    + apply leb_complete in Eqb. assumption.
+    + inversion Eqb. rewrite H0 in H2. discriminate H2.
+  - destruct (negb (2 <=? (st X))) eqn:Eqb.
+    + rewrite negb_true_iff in Eqb. rewrite leb_iff_conv in Eqb.
+      unfold not. intros.
+      rewrite lt_succ_r in Eqb. inversion Eqb.
+      * rewrite H3 in H1. apply le_S_n in H1. apply nle_succ_0 in H1.
+        contradiction.
+      * inversion H3. rewrite H5 in H1. apply nle_succ_0 in H1. contradiction.
+    + inversion Eqb. rewrite H0 in H2. rewrite negb_false_iff in H2.
+      discriminate H2.
+  - apply parity_ge_2 in H0. rewrite H0. assumption.
+  - apply parity_lt_2 in H0. rewrite H0 in H. assumption.
+Qed.
+      
 
 (** [] *)
 
