@@ -1504,22 +1504,22 @@ Qed.
 Definition sqrt_dec (m:nat) : decorated :=
   <{
     {{ X = m }} ->>
-    {{ FILL_IN_HERE }}
+    {{ X = m /\ 0 * 0 <= m }}
       Z := 0
-                   {{ FILL_IN_HERE }};
+                   {{ X = m /\ Z * Z <= m }};  (* invariant *)
       while ((Z+1)*(Z+1) <= X) do
-                   {{ FILL_IN_HERE }} ->>
-                   {{ FILL_IN_HERE }}
+                   {{ X = m /\ Z * Z <= m /\ (Z + 1) * (Z + 1) <= X }} ->>
+                   {{ X = m /\ (Z + 1) * (Z + 1) <= m }}
         Z := Z + 1
-                   {{ FILL_IN_HERE }}
+                   {{ X = m /\ Z * Z <= m }}
       end
-    {{ FILL_IN_HERE }} ->>
+    {{ X = m /\ Z * Z <= m /\ ~ ((Z + 1) * (Z + 1) <= X) }} ->>
     {{ Z*Z<=m /\ m<(Z+1)*(Z+1) }}
   }>.
 
 Theorem sqrt_correct : forall m,
   outer_triple_valid (sqrt_dec m).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. verify. Qed.
 
 (* ================================================================= *)
 (** ** Example: Squaring *)
