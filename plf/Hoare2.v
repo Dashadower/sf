@@ -1642,14 +1642,41 @@ Compute fact 5. (* ==> 120 *)
     For example, recall that [1 + ...] is easier to work with than
     [... + 1]. *)
 
-Example factorial_dec (m:nat) : decorated
-(* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Lemma fact_plus_one: forall n,
+  fact n * (1 + n) = fact (1 + n).
+Proof.
+  intros n. rewrite mul_add_distr_l. simpl.
+  rewrite mul_1_r. rewrite mul_comm. reflexivity.
+Qed.
 
-(* FILL IN HERE *)
+Example factorial_dec (m:nat) : decorated :=
+  <{
+  {{ X = m }}
+  Z := 1
+  {{ X = m /\ Z = 1}};
+  Y := 1
+  {{ X = m /\ Z = 1 /\ Y = 1}} ->> {{ X = m /\ Y = ap fact Z }};
+  while X <> Z do
+    {{ X = m /\ Y = ap fact Z /\ X <> Z }} ->> {{X = m /\ Y * (1 + Z) = ap fact (1 + Z)}}
+    Z := Z + 1
+    {{ X = m /\ Y * Z = ap fact Z }};
+    Y := Y * Z
+    {{ X = m /\ Y = ap fact Z }}
+  end
+  {{ X = m /\ Y = ap fact Z /\ X = Z }} ->> {{ Y = ap fact m }}
+  }>.
+
 
 Theorem factorial_correct: forall m,
   outer_triple_valid (factorial_dec m).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+  verify. rewrite mul_add_distr_l. rewrite mul_succ_r in H0. 
+  rewrite mul_1_r. rewrite H0.
+  assert (st Z + 1 = 1 + st Z) by (rewrite add_comm; reflexivity).
+  rewrite H. rewrite add_comm. rewrite mul_comm. rewrite mult_n_Sm.
+  apply fact_plus_one.
+Qed.
+  
 (** [] *)
 
 (* ================================================================= *)
