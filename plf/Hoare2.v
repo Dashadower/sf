@@ -1669,7 +1669,7 @@ Example factorial_dec (m:nat) : decorated :=
 
 Theorem factorial_correct: forall m,
   outer_triple_valid (factorial_dec m).
-Proof. 
+Proof.
   verify. rewrite mul_add_distr_l. rewrite mul_succ_r in H0. 
   rewrite mul_1_r. rewrite H0.
   assert (st Z + 1 = 1 + st Z) by (rewrite add_comm; reflexivity).
@@ -1695,33 +1695,48 @@ Qed.
     You may find [andb_true_eq] useful (perhaps after using symmetry
     to get an equality the right way around). *)
 
+Print andb_true_eq.
+
 Definition minimum_dec (a b : nat) : decorated :=
   <{
     {{ True }} ->>
-    {{ FILL_IN_HERE }}
+    {{ True }}
       X := a
-             {{ FILL_IN_HERE }};
+             {{ X = a }};
       Y := b
-             {{ FILL_IN_HERE }};
+             {{ X = a /\ Y = b }};
       Z := 0
-             {{ FILL_IN_HERE }};
+             {{ Z + X = a /\ Z + Y = b /\ Z = 0 }};
       while X <> 0 && Y <> 0 do
-             {{ FILL_IN_HERE }} ->>
-             {{ FILL_IN_HERE }}
+             {{ X + Z = a /\ Y + Z = b /\ X <> 0 /\ Y <> 0 }} ->>
+             {{ X - 1 + Z + 1 = a /\ Y - 1 + Z + 1 = b }}
         X := X - 1
-             {{ FILL_IN_HERE }};
+             {{ X + Z + 1 = a /\ Y - 1 + Z + 1 = b }};
         Y := Y - 1
-             {{ FILL_IN_HERE }};
+             {{ X + Z + 1 = a /\ Y + Z + 1 = b }};
         Z := Z + 1
-             {{ FILL_IN_HERE }}
+             {{ X + Z = a /\ Y + Z = b }}
       end
-    {{ FILL_IN_HERE }} ->>
-    {{ Z = min a b }}
+    {{ Z + X = a /\ Z + Y = b /\ (X = 0 \/ Y = 0) }} ->>
+    {{ Z = ap2 min a b }}
   }>.
 
 Theorem minimum_correct : forall a b,
   outer_triple_valid (minimum_dec a b).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. verify.
+  - symmetry in H0. apply andb_true_eq in H0. destruct H0.
+    symmetry in H. apply negb_true_iff in H. apply eqb_neq in H.
+    apply H.
+  - symmetry in H0. apply andb_true_eq in H0. destruct H0.
+    symmetry in H0. apply negb_true_iff in H0. apply eqb_neq in H0.
+    apply H0.
+  - apply andb_false_iff in H0.
+    destruct H0.
+    + apply negb_false_iff in H. apply eqb_eq in H.
+      left. apply H.
+    + apply negb_false_iff in H. apply eqb_eq in H.
+      right. apply H.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -1749,39 +1764,40 @@ Proof. (* FILL IN HERE *) Admitted.
 Definition two_loops_dec (a b c : nat) : decorated :=
   <{
     {{ True }} ->>
-    {{ FILL_IN_HERE }}
+    {{ True }}
       X := 0
-                   {{ FILL_IN_HERE }};
+                   {{ X = 0 }};
       Y := 0
-                   {{ FILL_IN_HERE }};
+                   {{ X = 0 /\ Y = 0 }};
       Z := c
-                   {{ FILL_IN_HERE }};
+                   {{ Z = c /\ X = 0 /\ Y = 0 }};
       while X <> a do
-                   {{ FILL_IN_HERE }} ->>
-                   {{ FILL_IN_HERE }}
+                   {{ Y = 0 /\ Z = X + c /\ X <> a }} ->>
+                   {{ Y = 0 /\ Z + 1 = X + 1 + c }}
         X := X + 1
-                   {{ FILL_IN_HERE }};
+                   {{ Y = 0 /\ Z + 1 = X + c }};
         Z := Z + 1
-                   {{ FILL_IN_HERE }}
+                   {{ Y = 0 /\ Z = X + c }}
       end
-                   {{ FILL_IN_HERE }} ->>
-                   {{ FILL_IN_HERE }};
+                   {{ Y = 0 /\ Z = X + c /\ X = a }} ->>
+                   {{ Y = 0 /\ X = a /\ Z = X + Y + c }};
       while Y <> b do
-                   {{ FILL_IN_HERE }} ->>
-                   {{ FILL_IN_HERE }}
+                   {{ X = a /\ Z = X + Y + c /\ Y <> b }} ->>
+                   {{ X = a /\ Z + 1 = X + Y + 1 + c }}
         Y := Y + 1
-                   {{ FILL_IN_HERE }};
+                   {{ X = a /\ Z + 1 = X + Y + c }};
         Z := Z + 1
-                   {{ FILL_IN_HERE }}
+                   {{ X = a /\ Z = X + Y + c }}
       end
-    {{ FILL_IN_HERE }} ->>
+    {{ X = a /\ Z = X + Y + c /\ Y = b }} ->>
     {{ Z = a + b + c }}
   }>.
 
 Theorem two_loops : forall a b c,
   outer_triple_valid (two_loops_dec a b c).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  verify.
+Qed.
 
 (** [] *)
 
@@ -1815,22 +1831,22 @@ Definition dpow2_dec (n : nat) :=
     {{ True }} ->>
     {{ FILL_IN_HERE }}
       X := 0
-               {{ FILL_IN_HERE }};
+               {{ X = 0 }};
       Y := 1
-               {{ FILL_IN_HERE }};
+               {{ Y = 1 /\ X = 0 }};
       Z := 1
-               {{ FILL_IN_HERE }};
+               {{ Y = 1 /\ X = 0 /\ Z = 1 }};
       while X <> n do
-               {{ FILL_IN_HERE }} ->>
-               {{ FILL_IN_HERE }}
+               {{ Inv /\ X <> n }} ->>
+               {{ Inv [X |-> X + 1] [Y |-> Y + Z] [Z |-> 2 * Z] }}
         Z := 2 * Z
-               {{ FILL_IN_HERE }};
+               {{ Inv [X |-> X + 1] [Y |-> Y + Z] }};
         Y := Y + Z
-               {{ FILL_IN_HERE }};
+               {{ Inv [X |-> X + 1] }};
         X := X + 1
-               {{ FILL_IN_HERE }}
+               {{ Inv }}
       end
-    {{ FILL_IN_HERE }} ->>
+    {{ Inv /\ X = n }} ->>
     {{ Y = pow2 (n+1) - 1 }}
   }>.
 
