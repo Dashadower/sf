@@ -1837,17 +1837,17 @@ Definition dpow2_dec (n : nat) :=
       Z := 1
                {{ Y = 1 /\ X = 0 /\ Z = 1 }};
       while X <> n do
-               {{ Inv /\ X <> n }} ->>
-               {{ Inv [X |-> X + 1] [Y |-> Y + Z] [Z |-> 2 * Z] }}
+               {{ Z = ap pow2 X /\ Y = ap pow2 (X + 1) - 1 /\ X <> n }} ->>
+               {{ 2 * Z = ap pow2 (X + 1) /\ Y + 2 * Z = ap pow2 (X + 1 + 1) - 1 }}
         Z := 2 * Z
-               {{ Inv [X |-> X + 1] [Y |-> Y + Z] }};
+               {{ Z = ap pow2 (X + 1) /\ Y + Z = ap pow2 (X + 1 + 1) - 1 }};
         Y := Y + Z
-               {{ Inv [X |-> X + 1] }};
+               {{ Z = ap pow2 (X + 1) /\ Y = ap pow2 (X + 1 + 1) - 1 }};
         X := X + 1
-               {{ Inv }}
+               {{ Z = ap pow2 X /\ Y = ap pow2 (X + 1) - 1 }}
       end
-    {{ Inv /\ X = n }} ->>
-    {{ Y = pow2 (n+1) - 1 }}
+    {{ Z = ap pow2 X /\ Y = ap pow2 (X + 1) - 1 /\ X = n }} ->>
+    {{ Y = ap pow2 (n+1) - 1 }}
   }>.
 
 (** Some lemmas that you may find useful... *)
@@ -1870,7 +1870,17 @@ Qed.
 Theorem dpow2_down_correct : forall n,
   outer_triple_valid (dpow2_dec n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  verify.
+  - rewrite add_assoc. rewrite add_0_r. symmetry. apply pow2_plus_1.
+  - rewrite add_assoc. rewrite add_assoc. rewrite add_0_r.
+    rewrite add_comm with (n := pow2 (st X + 1) - 1).
+    rewrite add_comm. rewrite add_assoc. rewrite <- pow2_plus_1.
+    pose proof add_sub_assoc. assert (H2: pow2 (st X + 1) >= 1) by apply pow2_le_1.
+    unfold ge in *. apply H with (n := pow2 (st X + 1)) in H2.
+    rewrite pow2_plus_1 with (n := (st X + 1)). apply H2.
+Qed.
+
+    
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced, optional (fib_eqn)
@@ -1903,7 +1913,7 @@ Lemma fib_eqn : forall n,
   n > 0 ->
   fib n + fib (pred n) = fib (1 + n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (fib)
