@@ -627,7 +627,11 @@ Inductive step : tm -> tm -> Prop :=
 Lemma value_not_same_as_normal_form :
   exists v, value v /\ ~ normal_form step v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold normal_form. exists (P (C 1) (C 0)).
+  split.
+  - apply v_funny.
+  - unfold not. intros. apply H. exists (C (1 + 0)). apply ST_PlusConstConst.
+Qed.
 End Temp1.
 
 (** [] *)
@@ -662,7 +666,12 @@ Inductive step : tm -> tm -> Prop :=
 Lemma value_not_same_as_normal_form :
   exists v, value v /\ ~ normal_form step v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists (C 0).
+  split.
+  - apply v_const.
+  - unfold normal_form. unfold not. intros. apply H.
+    exists (P (C 0) (C 0)). apply ST_Funny.
+Qed.
 
 End Temp2.
 (** [] *)
@@ -697,7 +706,12 @@ Inductive step : tm -> tm -> Prop :=
 Lemma value_not_same_as_normal_form :
   exists t, ~ value t /\ normal_form step t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists (P (C 0) (P (C 0) (C 1))).
+  split.
+  - unfold not. intros. inversion H.
+  - unfold normal_form. unfold not. intros.
+    inversion H. inversion H0. inversion H4.
+Qed.
 
 End Temp3.
 (** [] *)
