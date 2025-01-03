@@ -1913,6 +1913,15 @@ Lemma fib_eqn : forall n,
   n > 0 ->
   fib n + fib (pred n) = fib (1 + n).
 Proof.
+  intros.
+  induction n.
+  - intros. unfold gt in H. inversion H.
+  - simpl in *. inversion H.  (* 1 <= n -> exists n'. n = S n' zero_or_succ*)
+    * simpl. reflexivity.
+    * pose proof zero_or_succ n. destruct H2.
+      + subst. inversion H1.
+      + destruct H2. subst. reflexivity.
+Qed.
   
 (** [] *)
 
@@ -1947,31 +1956,32 @@ Definition dfib (n : nat) : decorated :=
     {{ True }} ->>
     {{ FILL_IN_HERE }}
     X := 1
-                {{ FILL_IN_HERE }} ;
+                {{ X = 1 }} ;
     Y := 1
-                {{ FILL_IN_HERE }} ;
+                {{ Y = 1 /\ X = 1 }} ;
     Z := 1
-                {{ FILL_IN_HERE }} ;
+                {{ Z = 1 /\ Y = 1 /\ X = 1 }} ;
     while X <> 1 + n do
-                  {{ FILL_IN_HERE }} ->>
-                  {{ FILL_IN_HERE }}
-      T := Z
-                  {{ FILL_IN_HERE }};
-      Z := Z + Y
-                  {{ FILL_IN_HERE }};
-      Y := T
-                  {{ FILL_IN_HERE }};
-      X := 1 + X
-                  {{ FILL_IN_HERE }}
+                  {{ Y + Z = ap fib (1 + X) /\ Z = ap fib X /\ X <> 1 + n }} ->>
+                  {{ Z + Z + Y = ap fib (1 + 1 + X) /\ Z + Y = ap fib (1 + X) }}
+      T := Z (* fib_n*)
+                  {{ T + Z + Y = ap fib (1 + 1 + X) /\ Z + Y = ap fib (1 + X) }};
+      Z := Z + Y (* fib_n + 1 *)
+                  {{ T + Z = ap fib (1 + 1 + X) /\ Z = ap fib (1 + X) }};
+      Y := T  (* fib_n*)
+                  {{ Y + Z = ap fib (1 + 1 + X) /\ Z = ap fib (1 + X) }};
+      X := 1 + X (* n *)
+                  {{ Y + Z = ap fib (1 + X) /\ Z = ap fib X }}
     end
-    {{ FILL_IN_HERE }} ->>
+    {{ Y + Z = ap fib (1 + X) /\ Z = ap fib X /\ X = 1 + n }} ->>
     {{ Y = fib n }}
    }>.
 
 Theorem dfib_correct : forall n,
   outer_triple_valid (dfib n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  verify.
+Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (improve_dcom)
@@ -2066,7 +2076,12 @@ Definition is_wp P c Q :=
      {{ X = 0 }}
 *)
 (* FILL IN HERE
-
+1) X = 5
+2) Y + Z = 5
+3) X = Y
+4) Z = 4 /\ W = 3
+5) True
+6) False
     [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (is_wp)
@@ -2078,7 +2093,19 @@ Definition is_wp P c Q :=
 Theorem is_wp_example :
   is_wp (Y <= 4) <{X := Y + 1}> (X <= 5).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold is_wp.
+  split.
+  - simpl. unfold valid_hoare_triple. intros. inversion H.
+    subst. simpl in *. rewrite t_update_eq. apply add_le_mono_r with (p := 1) in H0. simpl in H0. apply H0.
+  - simpl. unfold valid_hoare_triple. unfold "->>".
+    intros. pose proof (H st (X !-> st Y + 1;st)).
+    assert (H2: st =[ X := Y + 1 ]=> (X !-> st Y + 1; st)). {
+      apply E_Asgn. reflexivity.
+    }
+    apply H1 in H2.
+    + rewrite t_update_eq in H2. apply add_le_mono_r with (p := 1). apply H2.
+    + assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced, optional (hoare_asgn_weakest)
@@ -2089,7 +2116,18 @@ Proof.
 Theorem hoare_asgn_weakest : forall Q X a,
   is_wp (Q [X |-> a]) <{ X := a }> Q.
 Proof.
-(* FILL IN HERE *) Admitted.
+  unfold is_wp.
+  split.
+  - apply hoare_asgn.
+  - unfold "->>". intros. unfold valid_hoare_triple in H.
+    pose proof (H st (X !-> aeval st a; st)).
+    assert (H2: st =[ X := a ]=> (X !-> aeval st a; st)). {
+      apply E_Asgn. reflexivity.
+    }
+    apply H1 in H2.
+    + unfold assertion_sub. assumption.
+    + assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced, optional (hoare_havoc_weakest)
@@ -2103,8 +2141,14 @@ Lemma hoare_havoc_weakest : forall (P Q : Assertion) (X : string),
   {{ P }} havoc X {{ Q }} ->
   P ->> havoc_pre X Q.
 Proof.
-(* FILL IN HERE *) Admitted.
-End Himp2.
+  unfold havoc_pre. unfold valid_hoare_triple. intros.
+  unfold "->>". intros.
+  pose proof (H st (X !-> n; st)).
+  apply H1.
+  - apply E_Havoc.
+  - assumption.
+Qed.
+
 (** [] *)
 
 (* 2024-01-02 21:54 *)
