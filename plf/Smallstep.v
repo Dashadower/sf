@@ -204,7 +204,8 @@ Example test_step_2 :
           (C 2)
           (C 4)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply ST_Plus2. apply ST_Plus2. apply ST_PlusConstConst.
+Qed.
 (** [] *)
 
 End SimpleArith1.
@@ -465,7 +466,15 @@ Inductive step : tm -> tm -> Prop :=
 Theorem step_deterministic :
   deterministic step.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x y1 y2 Hy1 Hy2.
+  generalize dependent y2.
+  induction Hy1. all: intros y2 Hy2. all: inversion Hy2; subst; try solve_by_invert.
+  - intros. reflexivity.
+  - apply IHHy1 in H2. subst. reflexivity.
+  - inversion H1; subst. inversion Hy1.
+  - inversion H; subst. inversion H3.
+  - apply IHHy1 in H4. subst. reflexivity.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
