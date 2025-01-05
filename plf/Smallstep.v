@@ -942,8 +942,6 @@ Qed.
 
 Theorem strong_progress : forall t,
   value t \/ (exists t', t --> t').
-Theorem strong_progress : forall t,
-  value t \/ (exists t', t --> t').
 Proof.
   induction t.
   - left. apply v_tru.
@@ -961,7 +959,8 @@ Qed.
      step relation? Write yes or no and briefly (1 sentence) explain
      your answer.
 
-(* FILL IN HERE *)
+    Yes. Since removing any of the rules for the guard makes the term stuck when both of the clauses
+    are not the same value.
 *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_properties_of_altered_step : option (nat*string) := None.
