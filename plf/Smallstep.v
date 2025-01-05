@@ -751,12 +751,12 @@ Inductive step : tm -> tm -> Prop :=
 
     Which of the following propositions are provable?  (This is just a
     thought exercise, but for an extra challenge feel free to prove
-    your answers in Coq.) *)
+    your answers in Coq.) *) 
 
 Definition bool_step_prop1 :=
   fls --> fls.
 
-(* FILL IN HERE *)
+(* nope, is value *)
 
 Definition bool_step_prop2 :=
      test
@@ -766,7 +766,7 @@ Definition bool_step_prop2 :=
   -->
      tru.
 
-(* FILL IN HERE *)
+(* iftrue -> iftrue *)
 
 Definition bool_step_prop3 :=
      test
@@ -779,7 +779,7 @@ Definition bool_step_prop3 :=
        (test tru tru tru)
        fls.
 
-(* FILL IN HERE *)
+(* if *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_smallstep_bools : option (nat*string) := None.
@@ -793,13 +793,48 @@ Definition manual_grade_for_smallstep_bools : option (nat*string) := None.
 Theorem strong_progress_bool : forall t,
   value t \/ (exists t', t --> t').
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction t.
+  - left. apply v_tru.
+  - left. apply v_fls.
+  - destruct IHt1. 
+    + inversion H. (* t1 is a value *)
+      * destruct IHt2.
+        ** right. exists t2. apply ST_IfTrue.
+        ** right. exists t2. apply ST_IfTrue.
+      * destruct IHt3.
+        ** right. exists t3. apply ST_IfFalse.
+        ** right. exists t3. apply ST_IfFalse.
+    + right. destruct H. exists (test x t2 t3). apply ST_If.
+      assumption.
+Qed.
+     
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (step_deterministic) *)
 Theorem step_deterministic : deterministic step.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold deterministic.
+  intros x.
+  induction x.
+  - intros. inversion H.
+  - intros. inversion H.
+  - intros.
+    inversion H; subst.
+    + inversion H0; subst.
+      * reflexivity.
+      * inversion H5.
+    + inversion H0; subst.
+      * reflexivity.
+      * inversion H5.
+    + inversion H0; subst.
+      * inversion H5.
+      * inversion H5.
+      * apply IHx1 with (y2 := t1'0) in H5.
+        ** subst. reflexivity.
+        ** assumption.
+Qed.
+
 (** [] *)
 
 Module Temp5.
@@ -835,7 +870,9 @@ Inductive step : tm -> tm -> Prop :=
   | ST_If : forall t1 t1' t2 t3,
       t1 --> t1' ->
       test t1 t2 t3 --> test t1' t2 t3
-  (* FILL IN HERE *)
+  | ST_ShortCircuit : forall t1 t2 t3,
+      t2 = t3 -> value t2 ->
+      test t1 t2 t3 --> t2
 
   where " t '-->' t' " := (step t t').
 
@@ -850,7 +887,11 @@ Definition bool_step_prop4 :=
 Example bool_step_prop4_holds :
   bool_step_prop4.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold bool_step_prop4.
+  apply ST_ShortCircuit.
+  - reflexivity.
+  - apply v_fls.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (properties_of_altered_step)
@@ -864,16 +905,57 @@ Proof.
     - Is the [step] relation still deterministic?  Write yes or no and
       briefly (1 sentence) explain your answer.
 
+      No. Consider the case `test t1 true true`. There may be two transitions:
+      1. Applying ST_If for `t1'` such that `t1 --> t1'` leads to `test t1' true true`
+      2. Applying ST_ShortCircuit leads to `test t1 true true`
+
       Optional: prove your answer correct in Coq. *)
 
-(* FILL IN HERE
+Theorem stepguard_nondeterministic : ~deterministic step.
+Proof.
+  unfold not.
+  unfold deterministic.
+  intros.
+  remember (test (test tru tru tru) tru tru) as L.
+  pose proof (H L (test tru tru tru) tru).
+  assert (T1: L --> test tru tru tru). {
+    subst. apply ST_If. apply ST_IfTrue.
+  }
+  assert (T2: L --> tru). {
+    subst. apply ST_ShortCircuit. 
+    - reflexivity.
+    - apply v_tru.
+  }
+  apply H0 in T1.
+  - discriminate T1.
+  - assumption.
+Qed.
+
+(* 
    - Does a strong progress theorem hold? Write yes or no and
      briefly (1 sentence) explain your answer.
+
+     Yes. The last rule's reduction result can only be a value.
 
      Optional: prove your answer correct in Coq.
 *)
 
-(* FILL IN HERE
+Theorem strong_progress : forall t,
+  value t \/ (exists t', t --> t').
+Theorem strong_progress : forall t,
+  value t \/ (exists t', t --> t').
+Proof.
+  induction t.
+  - left. apply v_tru.
+  - left. apply v_fls.
+  - destruct IHt1.
+    + inversion H.
+      * right. exists t2. apply ST_IfTrue.
+      * right. exists t3. apply ST_IfFalse.
+    + destruct H. right. exists (test x t2 t3). apply ST_If. assumption.
+Qed.
+
+(* 
    - In general, is there any way we could cause strong progress to
      fail if we took away one or more constructors from the original
      step relation? Write yes or no and briefly (1 sentence) explain
