@@ -1443,10 +1443,15 @@ Theorem evalF_eval : forall t n,
 Proof.
   Print evalF.
   split.
+  - generalize dependent t.
+    induction n.
+    + intros. 
+
   - generalize dependent n.
     induction t.
     + intros. simpl in H. subst. apply E_Const.
     + intros. simpl in H.
+Abort.
 (** [] *)
 
 (** We've considered arithmetic and conditional expressions
