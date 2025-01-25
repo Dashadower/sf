@@ -1443,15 +1443,21 @@ Theorem evalF_eval : forall t n,
 Proof.
   Print evalF.
   split.
-  - generalize dependent t.
-    induction n.
-    + intros. 
-
+  (* - intros. *)
   - generalize dependent n.
     induction t.
     + intros. simpl in H. subst. apply E_Const.
-    + intros. simpl in H.
-Abort.
+    + intros. simpl in H. rewrite <- H. specialize (IHt1 (evalF t1)).
+      specialize (IHt2 (evalF t2)). apply E_Plus.
+      * apply IHt1. reflexivity.
+      * apply IHt2. reflexivity.
+  - generalize dependent n.
+    induction t.
+    + intros. simpl. inversion H. reflexivity.
+    + intros. simpl in *. inversion H; subst.
+      specialize (IHt1 n1). specialize (IHt2 n2).
+      apply IHt1 in H2. apply IHt2 in H4. subst. reflexivity.
+Qed.
 (** [] *)
 
 (** We've considered arithmetic and conditional expressions
@@ -1505,7 +1511,12 @@ Inductive step : tm -> tm -> Prop :=
 (** **** Exercise: 3 stars, standard (combined_step_deterministic) *)
 Theorem combined_step_deterministic: (deterministic step) \/ ~ (deterministic step).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  left.
+  unfold deterministic.
+  intros x.
+  induction x.
+  - intros. inversion H.
+  - intros.
 
 (** [] *)
 
