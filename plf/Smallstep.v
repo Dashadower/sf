@@ -1508,6 +1508,11 @@ Inductive step : tm -> tm -> Prop :=
     Formally prove or disprove these two properties for the combined
     language. *)
 
+Example deterministic_test : test tru tru (P (C 1) (C 2)) --> tru.
+Proof.
+   apply ST_IfTrue with (t2 := P (C 1) (C 2)).
+Qed.
+
 (** **** Exercise: 3 stars, standard (combined_step_deterministic) *)
 Theorem combined_step_deterministic: (deterministic step) \/ ~ (deterministic step).
 Proof.
@@ -1515,8 +1520,8 @@ Proof.
   unfold deterministic.
   intros x.
   induction x.
-  - intros. inversion H.
-  - intros.
+  - (* C *) intros. inversion H.
+  - (* P t1 t2 *) intros.
 
 (** [] *)
 
