@@ -1518,10 +1518,14 @@ Theorem combined_step_deterministic: (deterministic step) \/ ~ (deterministic st
 Proof.
   left.
   unfold deterministic.
-  intros x.
-  induction x.
-  - (* C *) intros. inversion H.
-  - (* P t1 t2 *) intros.
+  intros x y1 y2 H.
+  generalize dependent y2.
+  induction H; intros.
+  - inversion H; subst.
+    + reflexivity.
+    + inversion H3.
+    + inversion H4.
+  - 
 
 (** [] *)
 
