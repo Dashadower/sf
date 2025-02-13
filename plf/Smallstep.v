@@ -1521,11 +1521,29 @@ Proof.
   intros x y1 y2 H.
   generalize dependent y2.
   induction H; intros.
-  - inversion H; subst.
+  - (* ST_PlusConsCons *) inversion H; subst.
     + reflexivity.
     + inversion H3.
     + inversion H4.
-  - 
+  - (* ST_Plus1 *) inversion H0; subst.
+    + inversion H.
+    + apply IHstep in H4; subst. reflexivity.
+    + inversion H3; rewrite <- H1 in H; inversion H.
+  - (* ST_Plus2 *) inversion H1; subst.
+    + inversion H0.
+    + inversion H; rewrite <- H2 in H5; inversion H5.
+    + apply IHstep in H6. subst. reflexivity.
+  - (* ST_IfTrue *) inversion H; subst.
+    + reflexivity. 
+    + inversion H4.
+  - (* ST_IfFalse *) inversion H; subst.
+    + reflexivity.
+    + inversion H4.
+  - (* St_If *) inversion H0; subst.
+    + inversion H.
+    + inversion H.
+    + apply IHstep in H5. subst. reflexivity.
+Qed.
 
 (** [] *)
 
