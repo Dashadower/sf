@@ -1552,7 +1552,25 @@ Theorem combined_strong_progress :
   (forall t, value t \/ (exists t', t --> t'))
   \/ ~ (forall t, value t \/ (exists t', t --> t')).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  right.
+  unfold not. intros.
+  
+  pose proof (H (P tru (C 0))).
+  destruct H0.
+  - inversion H0.
+  - destruct H0. inversion H0; subst.
+    + inversion H4.
+    + inversion H5.
+Qed.
+
+  (* induction t.
+  - left. apply v_const.
+  - destruct IHt1.
+    + destruct IHt2.
+      * inversion H; subst.
+        ** inversion H0; subst.
+           *** right. exists (C (n + n0)). apply ST_PlusConstConst.
+           ***  *)
 (** [] *)
 
 End Combined.
