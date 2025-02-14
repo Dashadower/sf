@@ -1942,7 +1942,12 @@ Lemma par_body_n__Sn : forall n st,
   st X = n /\ st Y = 0 ->
   par_loop / st -->* par_loop / (X !-> S n ; st).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold par_loop.
+  intros.
+  eapply multi_step.
+  - apply CS_Par2. apply CS_While.
+  - eapply multi_step.
+    + apply CS_Par2. apply CS_SeqStep.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (par_body_n) *)
