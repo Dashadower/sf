@@ -1835,7 +1835,7 @@ Example par_loop_example_0:
        par_loop / empty_st  -->* <{skip}> / st'
     /\ st' X = 0.
 Proof.
-  unfold par_loop.
+  unfold par_loop. 
   eexists. split.
   - eapply multi_step.
     + apply CS_Par1.  apply CS_Asgn.
@@ -1947,7 +1947,45 @@ Proof.
   eapply multi_step.
   - apply CS_Par2. apply CS_While.
   - eapply multi_step.
-    + apply CS_Par2. apply CS_SeqStep.
+    + apply CS_Par2. apply CS_IfStep. destruct H. apply BS_Eq1.
+      apply AS_Id.
+    + eapply multi_step.
+      * apply CS_Par2. apply CS_IfStep. apply BS_Eq.
+      * destruct H. rewrite H0. simpl.
+        eapply multi_step.
+        {
+          apply CS_Par2. apply CS_IfTrue.
+        }
+        {
+          eapply multi_step.
+          {
+            apply CS_Par2. apply CS_SeqStep. apply CS_AsgnStep. apply AS_Plus1.
+            apply AS_Id.
+          }
+          {
+            eapply multi_step.
+            {
+              apply CS_Par2. apply CS_SeqStep. apply CS_AsgnStep. apply AS_Plus.
+            }
+            {
+              eapply multi_step.
+              {
+                apply CS_Par2. apply CS_SeqStep. apply CS_Asgn.
+              }
+              {
+                eapply multi_step.
+                {
+                  apply CS_Par2. apply CS_SeqFinish.
+                }
+                {
+                  rewrite H. rewrite Nat.add_1_r. apply multi_refl.
+                }
+              }
+            }
+          }
+        }
+Qed.
+           
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (par_body_n) *)
@@ -1956,7 +1994,71 @@ Lemma par_body_n : forall n st,
   exists st',
     par_loop / st -->*  par_loop / st' /\ st' X = n /\ st' Y = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold par_loop. intros. destruct H.
+  induction n.
+  - exists st. split.
+    * apply multi_refl.
+    * split; assumption.
+  - destruct IHn. rename x into Est.
+    inversion H1 as [H' [HX HY] ]; clear H1.
+    exists (X !-> S n ; Est). split.
+    + eapply multi_trans.
+      * apply H'.
+      * eapply multi_step.
+        {
+          apply CS_Par2. apply CS_While.
+        }
+        {
+          eapply multi_step.
+          {
+            apply CS_Par2. apply CS_IfStep. apply BS_Eq1. apply AS_Id.
+          }
+          {
+            eapply multi_step.
+            {
+              apply CS_Par2. rewrite HY. apply CS_IfStep. apply BS_Eq.
+            }
+            {
+              simpl. eapply multi_step.
+              {
+                apply CS_Par2. apply CS_IfTrue.
+              }
+              {
+                eapply multi_step.
+                {
+                  apply CS_Par2. apply CS_SeqStep. apply CS_AsgnStep. apply AS_Plus1. apply AS_Id.
+                }
+                {
+                  eapply multi_step.
+                  {
+                    apply CS_Par2. apply CS_SeqStep. rewrite HX. apply CS_AsgnStep. apply AS_Plus. 
+                  }
+                  {
+                    eapply multi_step.
+                    {
+                      apply CS_Par2. apply CS_SeqStep. apply CS_Asgn.
+                    }
+                    {
+                      eapply multi_step.
+                      {
+                        apply CS_Par2. apply CS_SeqFinish.
+                      }
+                      {
+                        rewrite Nat.add_1_r. apply multi_refl.
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+    + split.
+      * rewrite t_update_eq. reflexivity.
+      * rewrite t_update_neq.
+        ** assumption.
+        ** unfold not. intros. discriminate H1.
+Qed.
 (** [] *)
 
 (** ... the above loop can exit with [X] having any value
