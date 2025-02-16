@@ -2073,6 +2073,15 @@ Proof.
   destruct (par_body_n n empty_st).
   - split; reflexivity.
   - rename x into st.
+
+  (* 
+  The above code is equal to:
+  pose proof (par_body_n n empty_st).
+  destruct H.
+  - split; reflexivity.
+  - rename x into st. 
+  *)
+
   inversion H as [H' [HX HY] ]; clear H.
   exists (Y !-> 1 ; st). split.
     + eapply multi_trans with (par_loop,st).
@@ -2108,6 +2117,8 @@ End CImp.
 
 Definition stack := list nat.
 Definition prog  := list sinstr.
+Print sinstr.
+Locate sinstr.
 
 Inductive stack_step (st : state) : prog * stack -> prog * stack -> Prop :=
   | SS_Push : forall stk n p,
@@ -2142,11 +2153,33 @@ Definition stack_multistep st := multi (stack_step st).
 
 (* Copy your definition of s_compile here *)
 
-Definition compiler_is_correct_statement : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint s_compile (e : aexp) : list sinstr :=
+  match e with
+    | ANum n => [SPush n]
+    | AId x => [SLoad x]
+    | APlus e1 e2 => s_compile e1 ++ s_compile e2 ++ [SPlus]
+    | AMinus e1 e2 => s_compile e1 ++ s_compile e2 ++ [SMinus]
+    | AMult e1 e2 => s_compile e1 ++ s_compile e2 ++ [SMult]
+  end.
+
+Print prog.
+
+Definition compiler_is_correct_statement : Prop :=
+  forall st aexp,
+  stack_multistep st (s_compile aexp,[]) ([], [aeval st aexp]).
 
 Theorem compiler_is_correct : compiler_is_correct_statement.
 Proof.
+  unfold compiler_is_correct_statement.
+  intros.
+  induction aexp; simpl.
+  - unfold stack_multistep. eapply multi_step.
+    + apply SS_Push.
+    + apply multi_refl.
+  - eapply multi_step.
+    + apply SS_Load.
+    + apply multi_refl.
+  - 
 (* FILL IN HERE *) Admitted.
 (** [] *)
 
