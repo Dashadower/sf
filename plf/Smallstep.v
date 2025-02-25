@@ -2168,18 +2168,42 @@ Definition compiler_is_correct_statement : Prop :=
   forall st aexp,
   stack_multistep st (s_compile aexp,[]) ([], [aeval st aexp]).
 
+Lemma step_app : forall st aexp1 aexp2 ,
+  multi (stack_step st) (s_compile aexp1 ++ s_compile aexp2, []) (s_compile aexp2, [aeval st aexp1]).
+Proof.
+  intros st aexp1.
+  generalize dependent st.
+  induction aexp1; intros; simpl.
+  - eapply multi_step.
+    + apply SS_Push.
+    + apply multi_refl.
+  - eapply multi_step.
+    + apply SS_Load.
+    + apply multi_refl.
+  - eapply multi_step.
++ Abort.
+
+
+
 Theorem compiler_is_correct : compiler_is_correct_statement.
 Proof.
   unfold compiler_is_correct_statement.
-  intros.
-  induction aexp; simpl.
+  intros st aexp.
+  (* generalize dependent st. *)
+  induction aexp; simpl; intros.
   - unfold stack_multistep. eapply multi_step.
     + apply SS_Push.
     + apply multi_refl.
   - eapply multi_step.
     + apply SS_Load.
     + apply multi_refl.
-  - 
+  - unfold stack_multistep in *.
+    apply multi_trans with (R := (stack_step st)) 
+                           (x := (s_compile aexp1 ++ s_compile aexp2 ++ [SPlus], []))
+                           (y := (s_compile aexp2 ++ [SPlus], [aeval st aexp1])) 
+                           (z := ([], [aeval st aexp1 + aeval st aexp2])).
+    + 
+
 (* FILL IN HERE *) Admitted.
 (** [] *)
 
