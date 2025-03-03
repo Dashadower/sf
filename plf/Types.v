@@ -224,7 +224,17 @@ Proof.
   induction t; intros; unfold step_normal_form; unfold not; intros; inversion H0.
   - inversion H1.
   - inversion H1.
+  - inversion H.
+    + inversion H2.
+    + inversion H2.
   - inversion H1.
+  - inversion H.
+    + inversion H2.
+    + inversion H2. induction H4.
+      * inversion H1; subst. unfold value in IHt. assert (H6: nvalue <{ 0 }>) by apply nv_0.
+        assert (step_normal_form <{0 }>) by (apply IHt; right; apply H6). unfold step_normal_form in H3.
+        unfold not in H3. apply H3. exists t1'. assumption.
+      * subst. 
 
 
 (** (Hint: You will reach a point in this proof where you need to
