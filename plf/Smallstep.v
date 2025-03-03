@@ -2165,24 +2165,8 @@ Fixpoint s_compile (e : aexp) : list sinstr :=
 Print prog.
 
 Definition compiler_is_correct_statement : Prop :=
-  forall st aexp,
-  stack_multistep st (s_compile aexp,[]) ([], [aeval st aexp]).
-
-Lemma step_app : forall st aexp1 aexp2 ,
-  multi (stack_step st) (s_compile aexp1 ++ s_compile aexp2, []) (s_compile aexp2, [aeval st aexp1]).
-Proof.
-  intros st aexp1.
-  generalize dependent st.
-  induction aexp1; intros; simpl.
-  - eapply multi_step.
-    + apply SS_Push.
-    + apply multi_refl.
-  - eapply multi_step.
-    + apply SS_Load.
-    + apply multi_refl.
-  - eapply multi_step.
-+ Abort.
-
+  forall st aexp prog stk,
+  stack_multistep st ((s_compile aexp) ++ prog, stk) (prog, [aeval st aexp] ++ stk).
 
 
 Theorem compiler_is_correct : compiler_is_correct_statement.
@@ -2197,14 +2181,32 @@ Proof.
   - eapply multi_step.
     + apply SS_Load.
     + apply multi_refl.
-  - unfold stack_multistep in *.
-    apply multi_trans with (R := (stack_step st)) 
-                           (x := (s_compile aexp1 ++ s_compile aexp2 ++ [SPlus], []))
-                           (y := (s_compile aexp2 ++ [SPlus], [aeval st aexp1])) 
-                           (z := ([], [aeval st aexp1 + aeval st aexp2])).
-    + 
+  - unfold stack_multistep in *. rewrite <- app_assoc. rewrite <- app_assoc.
+    apply multi_trans with (y := (s_compile aexp2 ++ [SPlus] ++ prog0, [aeval st aexp1] ++ stk)).
+    + apply IHaexp1.
+    + apply multi_trans with (y := ([SPlus] ++ prog0, [aeval st aexp2] ++ [aeval st aexp1] ++ stk)).
+      * apply IHaexp2.
+      * simpl. eapply multi_step.
+        ** apply SS_Plus.
+        ** apply multi_refl.
+  - unfold stack_multistep in *. rewrite <- app_assoc. rewrite <- app_assoc.
+    apply multi_trans with (y := (s_compile aexp2 ++ [SMinus] ++ prog0, [aeval st aexp1] ++ stk)).
+    + apply IHaexp1.
+    + apply multi_trans with (y := ([SMinus] ++ prog0, [aeval st aexp2] ++ [aeval st aexp1] ++ stk)).
+      * apply IHaexp2.
+      * simpl. eapply multi_step.
+        ** apply SS_Minus.
+        ** apply multi_refl.
+   - unfold stack_multistep in *. rewrite <- app_assoc. rewrite <- app_assoc.
+    apply multi_trans with (y := (s_compile aexp2 ++ [SMult] ++ prog0, [aeval st aexp1] ++ stk)).
+    + apply IHaexp1.
+    + apply multi_trans with (y := ([SMult] ++ prog0, [aeval st aexp2] ++ [aeval st aexp1] ++ stk)).
+      * apply IHaexp2.
+      * simpl. eapply multi_step.
+        ** apply SS_Mult.
+        ** apply multi_refl.
+Qed.
 
-(* FILL IN HERE *) Admitted.
 (** [] *)
 
 (* ################################################################# *)
@@ -2294,7 +2296,11 @@ Theorem normalize_ex : exists e',
   (P (C 3) (P (C 2) (C 1)))
   -->* e' /\ value e'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eexists.
+  split.
+  - normalize.
+  - apply v_const.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard, optional (normalize_ex')
@@ -2305,7 +2311,18 @@ Theorem normalize_ex' : exists e',
   (P (C 3) (P (C 2) (C 1)))
   -->* e' /\ value e'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists (C 6).
+  split.
+  - apply multi_step with ((P (C 3) (C 3))).
+    + apply ST_Plus2.
+      * apply v_const.
+      * apply ST_PlusConstConst.
+    + apply multi_step with (C 6).
+      * apply ST_PlusConstConst.
+      * apply multi_refl.
+  - apply v_const.
+Qed.
+  
 (** [] *)
 
 (* 2024-01-02 21:54 *)
