@@ -200,7 +200,15 @@ Hint Unfold stuck : core.
 Example some_term_is_stuck :
   exists t, stuck t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists <{succ true}>.
+  unfold stuck.
+  split.
+  - unfold step_normal_form. unfold not. intros. destruct H. inversion H; subst.
+    inversion H1.
+  - unfold not. intros. inversion H.
+    + inversion H0.
+    + inversion H0. inversion H2.
+Qed.
 (** [] *)
 
 (** However, although values and normal forms are _not_ the same in this
@@ -213,7 +221,11 @@ Proof.
 Lemma value_is_nf : forall t,
   value t -> step_normal_form t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction t; intros; unfold step_normal_form; unfold not; intros; inversion H0.
+  - inversion H1.
+  - inversion H1.
+  - inversion H1.
+
 
 (** (Hint: You will reach a point in this proof where you need to
     use an induction to reason about a term that is known to be a
