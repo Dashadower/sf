@@ -221,20 +221,28 @@ Qed.
 Lemma value_is_nf : forall t,
   value t -> step_normal_form t.
 Proof.
-  induction t; intros; unfold step_normal_form; unfold not; intros; inversion H0.
-  - inversion H1.
-  - inversion H1.
+  induction t; intros; unfold step_normal_form; unfold not; intros.
+  - inversion H0. inversion H1.
+  - inversion H0. inversion H1.
   - inversion H.
+    + inversion H1.
+    + inversion H1.
+  - inversion H0. inversion H1.
+  - inversion H0. inversion H.
     + inversion H2.
+    + remember <{succ t}> as EqS. induction H2.
+      * inversion H1.
+      * injection HeqEqS. intros. subst. assert (step_normal_form t) by (apply IHt; right; apply H2).
+        unfold step_normal_form in H3. unfold not in H3. inversion H1. apply H3. exists t1'. assumption.
+  - inversion H0. inversion H.
     + inversion H2.
-  - inversion H1.
-  - inversion H.
-    + inversion H2.
-    + inversion H2. induction H4.
-      * inversion H1; subst. unfold value in IHt. assert (H6: nvalue <{ 0 }>) by apply nv_0.
-        assert (step_normal_form <{0 }>) by (apply IHt; right; apply H6). unfold step_normal_form in H3.
-        unfold not in H3. apply H3. exists t1'. assumption.
-      * subst. 
+    + remember <{pred t}> as Eq. induction H2.
+      * inversion H1.
+      * inversion HeqEq.
+  - destruct H0. destruct H.
+    + inversion H.
+    + inversion H.
+Qed.
 
 
 (** (Hint: You will reach a point in this proof where you need to
@@ -255,7 +263,46 @@ Proof.
 Theorem step_deterministic:
   deterministic step.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  unfold deterministic.
+  intros x y1 y2 H.
+  generalize dependent y2.
+  induction H; intros.
+  - inversion H; subst.
+    + reflexivity.
+    + inversion H4.
+  - inversion H; subst.
+    + reflexivity.
+    + inversion H4.
+  - inversion H0; subst.
+    + inversion H.
+    + inversion H.
+    + apply IHstep in H5. rewrite H5. reflexivity.
+  - inversion H0. subst. apply IHstep in H2. rewrite H2. reflexivity.
+  - inversion H.
+    + reflexivity.
+    + inversion H1.
+  - pose proof value_is_nf. inversion H0; subst.
+    + reflexivity.
+    + apply nv_succ in H. assert (step_normal_form <{succ v}>) by (apply H1; right; apply H). unfold step_normal_form in H2.
+      unfold not in H2. destruct H2. exists t1'. assumption.
+  - pose proof value_is_nf. inversion H0; subst.
+    + inversion H.
+    + apply nv_succ in H3. assert (step_normal_form <{succ y2}>) by (apply H1; right; apply H3). unfold step_normal_form in H2.
+      destruct H2. exists t1'. assumption.
+    + apply IHstep in H3. rewrite H3. reflexivity.
+  - inversion H; subst.
+    + reflexivity.
+    + inversion H1.
+  - pose proof value_is_nf. inversion H0; subst.
+    + reflexivity.
+    + apply nv_succ in H. assert (step_normal_form <{succ v}>) by (apply H1; right; apply H). unfold step_normal_form in H2.
+      destruct H2. exists t1'. assumption.
+  - pose proof value_is_nf. inversion H0; subst.
+    + inversion H.
+    + apply nv_succ in H3. assert (step_normal_form <{succ v}>) by (apply H1; right; apply H3). unfold step_normal_form in H2.
+      unfold not in H2. destruct H2. exists t1'. assumption.
+    + apply IHstep in H3. subst. reflexivity.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
