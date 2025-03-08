@@ -409,7 +409,8 @@ Example succ_hastype_nat__hastype_nat : forall t,
   |-- <{succ t}> \in Nat ->
   |-- t \in Nat.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros t. intros Contra. inversion Contra. assumption.
+Qed.
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -470,7 +471,34 @@ Proof.
     + (* t1 can take a step *)
       destruct H as [t1' H1].
       exists (<{ if t1' then t2 else t3 }>). auto.
-  (* FILL IN HERE *) Admitted.
+  - destruct IHHT.
+    + left. inversion H.
+      * apply nat_canonical in HT.
+        ** destruct HT; inversion H0.
+        ** assumption.
+      * unfold value. right. apply nv_succ in H0. assumption.
+    + destruct H. inversion HT; subst.
+      * apply ST_Succ in H. right. exists <{succ x}>. assumption.
+      * inversion H.
+      * apply ST_Succ in H. right. exists <{succ x}>. assumption.
+      * apply ST_Succ in H. right. exists <{succ x}>. assumption.
+  - destruct IHHT.
+    + inversion H.
+      * apply nat_canonical in HT.
+        ** destruct HT; inversion H0.
+        ** assumption.
+      * inversion H0.
+        ** right. exists <{0}>. apply ST_Pred0.
+        ** right. exists <{t}>. apply ST_PredSucc. assumption.
+    + destruct H. apply ST_Pred in H. right. exists <{ pred x}>. assumption.
+  - destruct IHHT.
+    + apply nat_canonical in HT.
+      ** destruct HT.
+         *** right. exists <{ true }>. apply ST_Iszero0.
+         *** right. exists <{ false}>. apply ST_IszeroSucc. assumption.
+      ** assumption.
+    + right. destruct H. exists <{ iszero x }>. apply ST_Iszero. assumption.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_progress_informal)
