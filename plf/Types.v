@@ -526,7 +526,12 @@ Qed.
       - If [t1] itself can take a step, then, by [ST_If], so can
         [t].
 
-    - (* FILL IN HERE *)
+    - For the case T_Succ, we have [t = succ t1], with [|-- t1 \in nat]. By the IH,
+      
+      * If t1 is a value, we have by the canonical forms lemma and [|-- t1 \in nat]
+        that t1 is a nvalue. By nv_succ, we also have [succ t1] being nvalue.
+      * If [t1] can take a step, We reason about the cases for [|-- t1 \in nat].
+        The nontrivial cases are all directly derived using ST_Succ.
  *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_finish_progress_informal : option (nat*string) := None.
@@ -567,7 +572,16 @@ Proof.
       + (* ST_IfFalse *) assumption.
       + (* ST_If *) apply T_If; try assumption.
         apply IHHT1; assumption.
-    (* FILL IN HERE *) Admitted.
+    - (* T_Succ *) inversion HE. subst. apply IHHT in H0. apply T_Succ in H0. assumption.
+    - (* T_Pred *) inversion HE; subst.
+      + (* 0 *) apply T_0.
+      + (* ST_PredSucc *) inversion HT. subst. assumption.
+      + (* St_Pred *) apply IHHT in H0. apply T_Pred in H0. assumption.
+    - (* T_ISzero*) inversion HE; subst.
+      + apply T_True.
+      + apply T_False.
+      + apply IHHT in H0. apply T_Iszero in H0. assumption.
+Qed. 
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_preservation_informal)
@@ -598,7 +612,9 @@ Proof.
         by the IH, [|-- t1' \in Bool].  The [T_If] rule then gives us
         [|-- if t1' then t2 else t3 \in T], as required.
 
-    - (* FILL IN HERE *)
+    - For [T_Succ], we have [succ t1 -> t'] for some t'. The only possible case for t' is [succ x]
+      for some x by ST_Succ. This gives use [t1 --> x]. By the IH, this gives us [|-- x \in Nat], which we can
+      apply T_Succ to prove the goal.
 *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_finish_preservation_informal : option (nat*string) := None.
