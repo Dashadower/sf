@@ -1920,11 +1920,6 @@ Definition pYX :=
 (** If you think they are equivalent, prove it. If you think they are
     not, prove that. *)
 
-Theorem CSeq_congruence : forall c1 c1' c2 c2',
-  cequiv c1 c1' -> cequiv c2 c2' ->
-  cequiv <{ c1;c2 }> <{ c1';c2' }>.
-Admitted.
-
 Theorem havoc_seq_equiv : 
   cequiv pXY pYX.
 Proof.
@@ -2277,21 +2272,6 @@ Proof.
   rewrite t_update_same. reflexivity.
 Qed.
 
-Lemma while_loop_postcondition : forall (x : string) (n : nat) (st st' : state),
-  st =[ while x <> n do havoc x end ]=> st' -> st' = (x !-> n ; st).
-Proof.
-  intros.
-  inversion H.
-  - inversion H4. apply negb_false_iff in H6. apply eqb_eq in H6.
-    apply st_extension in H6. rewrite H6 at 1. reflexivity.
-  - subst. 
-    assert (H1: st =[ while x <> n do havoc x end ]=> (x !-> n ; st)). {
-      apply E_WhileTrue with (st' := st'0).
-      - apply H2.
-      - apply H3.
-      - inversion H3. admit.
-    }
-Abort.
 
 Theorem p5_p6_equiv : cequiv p5 p6.
 Proof.
