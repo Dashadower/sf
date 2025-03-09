@@ -634,7 +634,27 @@ Theorem preservation' : forall t t' T,
   t --> t' ->
   |-- t' \in T.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  intros t t' T H.
+  generalize dependent t'.
+  induction H; intros.
+  - inversion H.
+  - inversion H.
+  - inversion H2; subst.
+    + assumption.
+    + assumption.
+    + apply IHhas_type1 in H7.
+      apply T_If; assumption.
+  - inversion H.
+  - inversion H0. subst. apply IHhas_type in H2. apply T_Succ. assumption.
+  - inversion H0; subst.
+    + assumption.
+    + inversion H. assumption.
+    + apply IHhas_type in H2. apply T_Pred in H2. assumption.
+  - inversion H0; subst.
+    + apply T_True.
+    + apply T_False.
+    + apply IHhas_type in H2. apply T_Iszero. assumption.
+Qed.
 (** [] *)
 
 (** The preservation theorem is often called _subject reduction_,
@@ -675,7 +695,10 @@ Qed.
     and [|-- t' \in T], then [|-- t \in T]?  If so, prove it.  If
     not, give a counter-example.
 
-    (* FILL IN HERE *)
+    Consider taking [if true then 0 else false] as t. It reduces to 0 by ST_IfTrue.
+    Since 0 has nat type, we have to expect t to have the same type.
+    However, we can see that the else clause has type false which cannot be satisfired by the
+    T_If typing relation.
 *)
 
 Theorem subject_expansion:
@@ -683,7 +706,16 @@ Theorem subject_expansion:
   \/
   ~ (forall t t' T, t --> t' /\ |-- t' \in T -> |-- t \in T).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  right. unfold not.
+  intros Contra.
+  specialize (Contra <{if true then 0 else false }> <{ 0 }> Nat).
+  assert (H: <{ if true then 0 else false }> --> <{ 0 }>) by apply ST_IfTrue.
+  assert (H1: |-- <{ 0 }> \in Nat) by apply T_0.
+  assert (Cons: |-- <{ if true then 0 else false }> \in Nat). {
+    apply Contra. split; assumption.
+  }
+  inversion Cons. inversion H7.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (variation1)
@@ -699,11 +731,13 @@ Proof.
    else "becomes false." If a property becomes false, give a
    counterexample.
       - Determinism of [step]
-            (* FILL IN HERE *)
+          Remains true, since typing relations do not effect step.
       - Progress
-            (* FILL IN HERE *)
+          Becomes false. Consider [succ false]. It is not a value.
+          ST_Succ also does not work, since false is a value and hence normal.
       - Preservation
-            (* FILL IN HERE *)
+          Remains true.
+            
 *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_variation1 : option (nat*string) := None.
@@ -718,7 +752,9 @@ Definition manual_grade_for_variation1 : option (nat*string) := None.
 
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
-            (* FILL IN HERE *)
+            Determinism - becomes false, since ST_IfTrue yields t2 while Funny1 yields t3
+            Progress - remains true.
+            Preservation - remains true.
 *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_variation2 : option (nat*string) := None.
@@ -734,7 +770,8 @@ Definition manual_grade_for_variation2 : option (nat*string) := None.
 
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
-            (* FILL IN HERE *)
+            Determinism - becomes false, since if true then t2 else t3 can reduce to
+                          t2 or if true then t2' else t3
 *)
 (** [] *)
 
@@ -747,7 +784,8 @@ Definition manual_grade_for_variation2 : option (nat*string) := None.
 
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
-(* FILL IN HERE *)
+   Preservation fails, since [pred false] does not have a valid typing relation and hence
+   we can't prove pred (pred false) has any type.
 *)
 (** [] *)
 
@@ -760,7 +798,8 @@ Definition manual_grade_for_variation2 : option (nat*string) := None.
 
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
-(* FILL IN HERE *)
+   Consider [pred if true then 0 else false]. This reduces to pred 0 with type bool.
+   The term is now stuck does not have a valid type, violating both progress and preservation.
 *)
 (** [] *)
 
@@ -773,7 +812,9 @@ Definition manual_grade_for_variation2 : option (nat*string) := None.
 
    Which of the above properties become false in the presence of
    this rule?  For each one that does, give a counter-example.
-(* FILL IN HERE *)
+  Preservation fails, since using ST_Pred0 yields 0, which is of Nat type.
+  PRogress fails since using pred 0 as the condition for if statements makes it get stuck
+  in the form [if 0 then t2 else t3]
 *)
 (** [] *)
 
@@ -795,8 +836,9 @@ Definition manual_grade_for_variation2 : option (nat*string) := None.
     be undefined, rather than being defined to be [0].  Can we
     achieve this simply by removing the rule from the definition of
     [step]?  Would doing so create any problems elsewhere?
-
-(* FILL IN HERE *)
+    We have, by T_Pred that for all nat n, pred n is also a nat type.
+    By the progress theorem, pred 0 should be a value or reduces to another term.
+    Without ST_Pred0, pred 0 gets stuck, violating progres.
 *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_remove_pred0  : option (nat*string) := None.
@@ -812,7 +854,8 @@ Definition manual_grade_for_remove_pred0  : option (nat*string) := None.
     allow for nonterminating programs?  Why might we prefer the
     small-step semantics for stating preservation and progress?
 
-(* FILL IN HERE *)
+  My guess is that since bigstep semantics relate a term to its fully evaluated final
+  value, there is no notion of "reduces to another term".
 *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_prog_pres_bigstep : option (nat*string) := None.
