@@ -487,10 +487,26 @@ Check <{[x:=true] x}>.
     constructors and prove that the relation you've defined coincides
     with the function given above. *)
 
+Print tm_abs.
+
 Inductive substi (s : tm) (x : string) : tm -> tm -> Prop :=
   | s_var1 :
       substi s x (tm_var x) s
-  (* FILL IN HERE *)
+  | s_var2 (y : string) :
+      x <> y -> substi s x (tm_var y) y
+  | s_abs1 (T : ty) (t : tm) :
+      substi s x (tm_abs x T t) (tm_abs x T t)
+  | s_abs2 (y : string) (T : ty) (t t' : tm) :
+      x <> y -> substi s x t t' -> substi s x (tm_abs y T t) (tm_abs y T t')
+  | s_app (t1 t2 t1' t2' : tm) :
+      substi s x t1 t1' -> substi s x t2 t2' -> substi s x (tm_app t1 t2) (tm_app t1' t2')
+  | s_true :
+      substi s x tm_true tm_true
+  | s_false :
+      substi s x tm_false tm_false
+  | s_ifelse (t1 t2 t3 t1' t2' t3' : tm) :
+      substi s x t1 t1' -> substi s x t2 t2' -> substi s x t3 t3' ->
+      substi s x (tm_if t1 t2 t3) (tm_if t1' t2' t3')
 .
 
 Hint Constructors substi : core.
@@ -498,7 +514,50 @@ Hint Constructors substi : core.
 Theorem substi_correct : forall s x t t',
   <{ [x:=s]t }> = t' <-> substi s x t t'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros s x0 t.
+  generalize dependent s.
+  generalize dependent x0.
+  induction t; intros; simpl.
+  - split.
+    + intros. destruct (x0 =? s)%string eqn:Eqb.
+      * subst. rewrite eqb_eq in Eqb. subst. apply s_var1.
+      * subst. rewrite eqb_neq in Eqb. apply s_var2. assumption.
+    + intros. inversion H; subst.
+      * rewrite eqb_refl. reflexivity.
+      * rewrite <- eqb_neq in H1. rewrite H1. reflexivity.
+  - split; intros.
+    + inversion H. apply s_app.
+      * apply IHt1. reflexivity.
+      * apply IHt2. reflexivity.
+    + inversion H. subst. apply IHt1 in H2.
+      apply IHt2 in H4. subst. reflexivity.
+  - (* tm_abs *) split; intros.
+    + destruct (x0 =? s)%string eqn:Eqb.
+      * apply eqb_eq in Eqb. subst. apply s_abs1.
+      * apply eqb_neq in Eqb. subst. apply s_abs2.
+        ** assumption.
+        ** apply IHt. reflexivity.
+    + destruct (x0 =? s)%string eqn:Eqb.
+      * apply eqb_eq in Eqb. subst. inversion H; subst.
+        ** reflexivity.
+        ** contradiction H4. reflexivity.
+      * apply eqb_neq in Eqb. subst. inversion H; subst.
+        ** contradiction Eqb. reflexivity.
+        ** apply IHt in H5. subst. reflexivity.
+  - (* tm_true *) split; intros.
+    + inversion H. apply s_true.
+    + inversion H. reflexivity.
+  - split; intros.
+    + subst. apply s_false.
+    + inversion H. reflexivity.
+  - (* tm_false *) split; intros.
+    + subst. apply s_ifelse.
+      * apply IHt1. reflexivity.
+      * apply IHt2. reflexivity.
+      * apply IHt3. reflexivity.
+    + inversion H. subst. apply IHt1 in H3.
+      apply IHt2 in H5. apply IHt3 in H6. subst. reflexivity.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
