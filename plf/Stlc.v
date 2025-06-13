@@ -913,7 +913,12 @@ Example typing_example_2_full :
           (y (y x)) \in
     (Bool -> (Bool -> Bool) -> Bool).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply T_Abs. apply T_Abs. apply T_App with (T2 := <{ Bool }>).
+  - apply T_Var. reflexivity.
+  - apply T_App with (T2 := <{ Bool }>).
+    + apply T_Var. reflexivity.
+    + apply T_Var. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (typing_example_3)
@@ -935,7 +940,11 @@ Example typing_example_3 :
                (y (x z)) \in
       T.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists <{ (Bool -> Bool) -> (Bool -> Bool) -> Bool -> Bool }>.
+  apply T_Abs. apply T_Abs. apply T_Abs. apply (T_App _ <{Bool}> _ y _ ).
+  - apply T_Var. reflexivity.
+  - apply T_App with (T2 := <{Bool}>); apply T_Var; reflexivity.
+Qed.
 (** [] *)
 
 (** We can also show that some terms are _not_ typable.  For example,
@@ -970,6 +979,8 @@ Qed.
 
     ~ (exists S T,
           empty |-- \x:S, x x \in T).
+
+  GOOD PROBLEM
 *)
 
 Example typing_nonexample_3 :
@@ -977,7 +988,33 @@ Example typing_nonexample_3 :
         empty |--
           \x:S, x x \in T).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (*
+  x is either a boolean or a function
+  1. Suppose x is bool. Then x x is not possible since it is not a function type
+  2. Suppose x is a function type. Then we have S =  T1 -> T2 as type for x.
+     Since (x x) needs to be well-typed, we must have (T1 -> T2) = T2 as a constraint.
+     We perform induction on type T1:
+     - If T1 is a boolean type, we get (Bool -> T2) = Bool which is false
+     - If T1 is a function type (T1_1 -> T1_2), we have (T1_1 -> T1_2) -> T2 = (T1_1 -> T1_2)
+       This implies (T1_1 -> T1_2) = T1_1.
+       By the induction hypothesis, if we show that x has type (T1_1 -> T1_2) and at the same time
+       has type T1_1, the contradiction is proved. By the equality above, we can show both are true, which proves the contradiction holds.
+  *)
+  intros Hc. destruct Hc as [S [T Hc]].
+  inversion Hc; subst. inversion H4; subst.
+  clear Hc H4.
+  inversion H2; subst.
+  inversion H5; subst.
+  rewrite H1 in H3. inversion H3.
+  clear H1 H3.
+  induction T2.
+  - discriminate H0.
+  - inversion H0; subst. apply IHT2_1 in H5.
+    + destruct H5.
+    + rewrite H1 in H5. assumption.
+    + assumption.
+Qed.
+  
 (** [] *)
 
 End STLC.
