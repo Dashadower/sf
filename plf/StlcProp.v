@@ -146,7 +146,28 @@ Theorem progress' : forall t T,
 Proof.
   intros t.
   induction t; intros T Ht; auto.
-  (* FILL IN HERE *) Admitted.
+  - inversion Ht. subst. discriminate H1.
+  - inversion Ht. subst.
+    destruct (IHt1 (Ty_Arrow T2 T)).
+    + assumption.
+    + destruct (IHt2 T2).
+      * assumption.
+      * eapply canonical_forms_fun in H2; [|assumption].
+        destruct H2. destruct H1. apply (ST_AppAbs x0 T2 x1 t2) in H0.
+        rewrite <- H1 in H0. right. exists <{ [x0 := t2] x1 }>.
+        assumption.
+      * destruct H0. apply (ST_App2 _ t2 x0) in H; [|assumption].
+        right. exists <{t1 x0}>. assumption.
+    + destruct H. apply (ST_App1 t1 x0 t2) in H.
+      right. exists <{x0 t2}>. assumption.
+  - inversion Ht; subst.
+    destruct (IHt1 Ty_Bool); [assumption| | ].
+    + destruct (canonical_forms_bool t1); try assumption.
+      * right. exists t2. rewrite H0. apply ST_IfTrue.
+      * right. exists t3. rewrite H0. apply ST_IfFalse.
+    + right. destruct H. exists <{if x0 then t2 else t3}>.
+      apply ST_If. assumption.
+Qed.
 (** [] *)
 
 (* ################################################################# *)
