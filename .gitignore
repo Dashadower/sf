@@ -45,3 +45,7 @@ time-of-build-both.log
 time-of-build-pretty.log
 Makefile.coq
 *.conf
+
+.DS_Store
+.devcontainer/
+
