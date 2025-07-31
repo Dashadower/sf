@@ -1341,6 +1341,23 @@ Definition factoimp : val :=
     Verify the function [triple_factoimp_aux]. Hint: the set up of the induction
     is provided. Use [facto_succ] in the proof. *)
 
+(*
+Parameter facto_init : forall n,
+  0 <= n <= 1 ->
+  facto n = 1.
+
+Parameter facto_step : forall n,
+  n >= 1 ->
+  facto n = n * (facto (n-1)).
+
+(** Sometimes it is more convenient to simplify the value of an expression of
+    the form [facto (n+1)], as captured by the following lemma. *)
+
+Lemma facto_succ : forall i,
+  i >= 0 ->
+  facto (i + 1) = (i + 1) * facto i.
+*)
+
 Lemma triple_factoimp_aux : forall (r:loc) (i n:int),
   0 <= i <= n ->
   triple (factoimp_aux r i n)
@@ -1348,7 +1365,16 @@ Lemma triple_factoimp_aux : forall (r:loc) (i n:int),
     (fun _ => r ~~> facto n).
 Proof using.
   introv. induction_wf IH: (upto n) i. introv Hn.
-  (* FILL IN HERE *) Admitted.
+  xwp.
+  xapp.
+  xif; intros.
+  - xapp. xapp. xapp. xapp. xapp; try math.
+    + rewrite facto_succ. 2: math.
+      math.
+    + xsimpl.
+  - xval. assert (i = n) by math. xsimpl. subst. reflexivity.
+Qed.
+  
 
 (** [] *)
 
@@ -1365,7 +1391,21 @@ Lemma triple_factoimp : forall n,
   triple (factoimp n)
     \[]
     (fun r => \[r = facto n]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using. 
+  intros.
+  xwp.
+  xapp.
+  intros.
+  xapp triple_factoimp_aux; try math.
+  - symmetry. pose proof facto_init. 
+    Set Printing Coercions.
+    specialize (H0 1). rewrite H0.
+    + reflexivity.
+    + math.
+  - xapp. xapp. xval. xsimpl. reflexivity.
+Qed.
+
+Unset Printing Coercions.
 
 (** [] *)
 
@@ -1472,6 +1512,12 @@ Qed.
     accounting also for the case [n = 0]. Hint: use [destruct Hn as [(?&?)|?]]
     to perform the case analyses. *)
 
+(*
+Lemma facto_succ : forall i,
+  i >= 0 ->
+  facto (i + 1) = (i + 1) * facto i.
+*)
+
 Lemma triple_factoimp_aux' : forall (r:loc) (i n:int),
   (i = 1 /\ n = 0) \/ (0 <= i <= n) ->
   triple (factoimp_aux r i n)
@@ -1479,7 +1525,24 @@ Lemma triple_factoimp_aux' : forall (r:loc) (i n:int),
     (fun _ => r ~~> facto n).
 Proof using.
   introv. induction_wf IH: (upto n) i. introv Hn.
-  (* FILL IN HERE *) Admitted.
+  xwp.
+  xapp.
+  xif.
+  - intros. xapp. xapp. xapp. xapp. destruct Hn.
+    + xapp; math.
+    + xapp. math.
+      * right. math.
+      * rewrite Z.mul_comm. symmetry. 
+        Set Printing Coercions.
+        rewrite facto_succ; math.
+      * xsimpl.
+  - intros. xval. xsimpl. destruct Hn.
+    + destruct H0. subst. rewrite facto_init.
+      rewrite facto_init. all: math.
+    + assert (i = n) by math. subst. reflexivity.
+Qed.
+
+Unset Printing Coercions.
 
 (** **** Exercise: 4 stars, standard, especially useful (triple_factoimp')
 
@@ -1494,7 +1557,19 @@ Lemma triple_factoimp' : forall n,
   triple (factoimp n)
     \[]
     (fun r => \[r = facto n]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  introv. intros H.
+  destruct (classic (n = 0)).
+  - xapp triple_factoimp_zero.
+    + math.
+    + xsimpl. reflexivity.
+  - xwp.
+    xapp. intros.
+    xsimpl. xapp triple_factoimp_aux.
+    + math.
+    + rewrite facto_init; math.
+    + xapp. xapp. xval. xsimpl. math.
+Qed.
 
 (* ################################################################# *)
 (** * Historical Notes *)
