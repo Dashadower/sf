@@ -267,7 +267,16 @@ Definition quadruple : val :=
 (** Specify and verify the function [quadruple] to express that it returns
     [4*n]. Follow the pattern of the previous proof. *)
 
-(* FILL IN HERE *)
+Lemma quadruple_correct : forall (n : int),
+  triple (quadruple n)
+    \[]
+    (fun r => \[r = 4 * n]).
+Proof.
+  xwp.
+  xapp.
+  xapp.
+  xsimpl. math.
+Qed.
 
 (** [] *)
 
@@ -286,7 +295,13 @@ Definition inplace_double : val :=
 (** Specify and verify the function [inplace_double], following the pattern of
     the first example, [triple_incr]. *)
 
-(* FILL IN HERE *)
+Lemma inplace_double_correct : forall (n : nat) (p : loc),
+  triple (inplace_double p)
+    (p ~~> n)
+    (fun _ => (p ~~> (2 * n))).
+Proof.
+  xwp. xapp. xapp. xapp. xsimpl. math.
+Qed.
 
 (** [] *)
 
@@ -505,7 +520,14 @@ Definition transfer : val :=
     [transfer p q] in the case where [p] and [q] denote two distinct references.
     *)
 
-(* FILL IN HERE *)
+Lemma transfer_correct : forall (p q : loc) (n m : nat),
+  triple (transfer p q)
+    (p ~~> n \* q ~~> m)
+    (fun _ => (p ~~> (n + m) \* q ~~> 0)).
+Proof using.
+  xwp. xapp. xapp. xapp. xapp. xapp. xsimpl.
+Qed.
+
 
 (** [] *)
 
@@ -515,7 +537,13 @@ Definition transfer : val :=
     behavior of [transfer] when it is applied twice to the same argument. It
     should take the form [triple (transfer p p) _ _]. *)
 
-(* FILL IN HERE *)
+Lemma triple_transfer_aliased : forall (p : loc) (n : nat),
+  triple (transfer p p)
+    (p ~~> n)
+    (fun _ => (p ~~> 0)).
+Proof using.
+  xwp. xapp. xapp. xapp. xapp. xapp. xsimpl.
+Qed.
 
 (** [] *)
 
@@ -618,7 +646,16 @@ Qed.
     Hint: Remember that the notation [\[P]] injects a Coq proposition into the
     language of Separation Logic predicates. *)
 
-(* FILL IN HERE *)
+Lemma triple_ref_greater_abstract : forall (p : loc) (n : nat),
+  triple (ref_greater p)
+    (p ~~> n)
+    ( funloc q => p ~~> n \* \exists m, q ~~> m \* \[m > n]).
+Proof.
+  intros.
+  xapp triple_ref_greater.
+  intros q.
+  xsimpl; auto. math.
+Qed.
 
 (** [] *)
 
@@ -776,7 +813,14 @@ Lemma triple_get_and_free : forall p v,
   triple (get_and_free p)
     (p ~~> v)
     (fun r => \[r = v]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  xwp.
+  xapp.
+  xapp.
+  xval.
+  xsimpl.
+  reflexivity.
+Qed.
 
 (** [] *)
 
@@ -817,7 +861,13 @@ Lemma triple_two_dice :
   triple <{ two_dice () }>
     \[]
     (fun r => \exists n, \[r = val_int n] \* \[2 <= n <= 12]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  xwp.
+  xapp triple_rand. { math. }
+  intros n1. intros. xapp triple_rand. { math. }
+  intros n2. intros. xapp. xapp. xsimpl. { math. }
+  math.
+Qed.
 
 (** [] *)
 
@@ -912,7 +962,7 @@ Definition factorec : val :=
     which tends to improve both the readability of specifications and the
     conciseness of proof scripts. In that style, the specification of [factorec]
     is stated as follows. *)
-
+ 
 Lemma triple_factorec : forall n,
   n >= 0 ->
   triple (factorec n)
@@ -1040,7 +1090,20 @@ Lemma triple_repeat_incr : forall (m n:int) (p:loc),
     introducing [n] or [p], otherwise the induction principle obtained is too
     weak. *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros m.
+  induction_wf IH: (downto 0%Z) m.
+  unfold downto in IH.
+  intros.
+  xwp.
+  xapp. 
+  xif.
+  - intros.
+    xapp. xapp. 
+    xapp; try xsimpl; math.
+  - intros. xval. xsimpl. math.
+Qed.
+
 
 (** [] *)
 
@@ -1137,7 +1200,22 @@ Lemma triple_repeat_incr' : forall (p:loc) (n m:int),
   triple (repeat_incr p m)
     (p ~~> n)
     (fun _ => p ~~> (n + max 0 m)).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using. 
+  intros.
+  gen p n.
+  induction_wf IH: (downto 0) m.
+  unfold downto in IH.
+  intros.
+  xwp.
+  xapp.
+  xif.
+  - intros. xapp. xapp.
+    xapp.
+    + math.
+    + xsimpl. assert (m >= 0) by math.
+      apply max_l in H0. unfold max. case_if; try math. case_if; math.
+  - intros. xval. xsimpl. unfold max. case_if; math.
+Qed.
 
 (** [] *)
 
@@ -1183,7 +1261,20 @@ Lemma triple_step_transfer : forall p q n m,
     Verify the function [step_transfer]. Hint: to set up the induction, follow
     the pattern from [triple_repeat_incr']. *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  gen p q n H.
+  induction_wf IH: (downto 0) m.
+  intros.
+  xwp.
+  xapp.
+  xapp.
+  xif; intros.
+  - xapp. xapp.
+    xapp; try xsimpl; math.
+  - xval. xsimpl; math.
+Qed.
+
 
 (** [] *)
 
