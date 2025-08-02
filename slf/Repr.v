@@ -132,6 +132,14 @@ Proof using. auto. Qed.
     provided by the TLC library. The tactic [case_if] is convenient for
     performing the case analysis on whether [P] is true or false. *)
 
+(*
+Inductive
+list_sub (A : Type) : list A -> list A -> Prop :=
+  list_sub_cons : forall (x : A) (l : list A), list_sub l (x :: l)
+| list_sub_tail : forall (x : A) (l1 l2 : list A),
+    list_sub l1 l2 -> list_sub l1 (x :: l2).
+*)
+
 Lemma MList_if : forall (p:loc) (L:list val),
       (MList L p)
   ==> (If p = null
@@ -139,7 +147,38 @@ Lemma MList_if : forall (p:loc) (L:list val),
         else \exists x q L', \[L = x::L']
              \* (p ~~~> `{ head := x; tail := q}) \* (MList L' q)).
 (** The proof is a bit technical: it may be skipped on a first reading. *)
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  (* intros p L.
+  gen p.
+  induction_wf IH: list_sub L.
+  - intros. 
+    induction L.
+    +  
+  - intros. case_if.
+    + destruct L eqn:EqL; xsimpl*.
+      3: {
+        rewrite C in *.
+        subst. xchange MList_cons. intros. specialize (IH l).
+        assert (list_sub l (v :: l)) by apply list_sub_cons.
+        apply IH with (p := null) in H.
+        case_if.
+        xchange H. case_if.
+      }
+  intros. revert p. induction L.
+  - intros. xchange MList_nil. case_if; xsimpl*.
+  - intros. xchange MList_cons. intros x. case_if.
+    + specialize (IHL null). case_if.
+    case_if . repeat intro. apply IHL. case_if; intros; xsimpl*.
+  - xchange MList_nil. intros. case_if. xsimpl*.
+  induction L.
+  (* - case_if.
+    + xchange MList_cons. intros. subst. *)
+  
+  - xchange MList_cons. intros. xpull. xapp MList_cons. remember (isTrue (p = null)) as EP. simpl. xpull. intros. case_if.
+    + xsimpl.
+    + Check hrecord_not_null. xsimpl. xchange MList_cons. intros. subst. xapp. xsimpl. intro. repeat intro. inversion H. destruct H0.
+      destruct H0 as [H0 [H1 [H2 H3]]]. subst. inversion H. constructor. *)
+Admitted.
 
 (** Note that the reciprocal entailment to the one stated in [MList_if] is also
     true, but we do not need it so we do not bother proving it here. In the rest
@@ -447,7 +486,17 @@ Lemma triple_mlength : forall L p,
   triple (mlength p)
     (MList L p)
     (fun r => \[r = val_int (length L)] \* (MList L p)).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros L p.
+  gen p.
+  induction_wf IH: list_sub L.
+  intros.
+  xwp.
+  xapp.
+  xif.
+  - intros.
+    xval. assert (p = null) by congruence. subst.
+    xsimpl.
 
 (** [] *)
 
