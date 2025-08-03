@@ -492,11 +492,24 @@ Proof using.
   induction_wf IH: list_sub L.
   intros.
   xwp.
-  xapp.
-  xif.
-  - intros.
-    xval. assert (p = null) by congruence. subst.
-    xsimpl.
+  xchange MList_if. 
+  case_if.
+  - xapp. intros. rewrite H0. assert (C' := C). apply isTrue_eq_true in C.
+    xif.
+    + intros. xval. rewrite H. xsimpl.
+      * math.
+      * xchange <- MList_nil. congruence.
+    + intros. unfold not in H1. rewrite C' in H1. contradiction.
+  - xpull. intros.
+    xapp. unfold not in C.
+    xif.
+    + intros. congruence.
+    + intros _. xapp. xapp.
+      * rewrite H. apply list_sub_cons.
+      * xapp. xsimpl.
+        -- rewrite H. rew_list.  math.
+        -- rewrite H. xchange <- MList_cons.
+Qed.
 
 (** [] *)
 
@@ -538,6 +551,10 @@ Definition mlength' : val :=
 
 (** (Recall that [get_and_free] was defined in chapter [Basic]. *)
 
+(** The function [get_and_free] takes as argument the address [p] of a reference
+    cell. It reads the contents of that cell, frees the cell, and returns its
+    contents. *)
+
 (** **** Exercise: 3 stars, standard, especially useful (triple_mlength')
 
     Prove the correctness of the function [mlength']. Hint: start by stating a
@@ -550,14 +567,73 @@ Definition mlength' : val :=
     can be used to prove arithmetic equalities such as
     [(n + 1) + m = n + (m + 1)]. *)
 
-(* FILL IN HERE *)
+Lemma triple_acclength_null : forall (ref_n : loc) n,
+  triple (acclength ref_n null)
+    (ref_n ~~> n)
+    (fun _ => ref_n ~~> n).
+Proof.
+  intros.
+  xwp.
+  xapp. xif.
+  - intros. contradiction.
+  - intros. xval. xsimpl*.
+Qed.
+
+Lemma triple_acclength : forall (ref_n ref_L ref_L' : loc) n x L',
+  triple (acclength ref_n ref_L)
+    (ref_n ~~> n \* \[ref_L <> null] \* ref_L ~~~> `{ head := x; tail := ref_L' } \* MList L' ref_L' )
+    (fun _ => ref_n ~~> (n + 1 + length L')  \* ref_L ~~~> `{ head := x; tail := ref_L' } \* MList L' ref_L' ).
+Proof.
+  intros.
+  gen ref_n ref_L ref_L' n x.
+  induction_wf IH: list_sub L'.
+  intros.
+  xwp.
+  xapp.
+  intros.
+  xchange MList_if.
+  rewrite H0.
+  xif.
+  - intros. xapp. case_if.
+    + (* ref_L' := null *)
+      unfold not in H.
+      xapp. intros L'_is_nil ref_L'_copy Href_L'_copy.
+      subst. xapp triple_acclength_null. xsimpl.
+      * rewrite length_nil. math.
+      * xchange <- MList_nil. reflexivity.
+    + (* ref_L' != null *)
+      xapp. intros. subst. xapp IH.
+      * apply list_sub_cons.
+      * assumption.
+      * xsimpl. 
+        -- rew_list. math.
+        -- xchange <- MList_cons. 
+  - (* ref_L = null *)
+    intros ref_L_null. xval.
+    case_if.
+Qed.
 
 Lemma triple_mlength' : forall L p,
   triple (mlength' p)
     (MList L p)
     (fun r => \[r = val_int (length L)] \* (MList L p)).
-Proof using. (* FILL IN HERE *) Admitted.
-
+Proof using.
+  intros L.
+  induction_wf IH: list_sub L.
+  intros.
+  xwp.
+  xchange MList_if.
+  case_if.
+  - (* p points to null, L is nil*) 
+    xapp. intros. subst. xapp triple_acclength_null. xapp. xsimpl.
+    try math. xsimpl. xchange <- MList_nil. reflexivity.
+  - (* p points to some list *)
+    + xapp. intros. subst. xapp triple_acclength.
+      * assumption.
+      * xapp. xsimpl.
+        -- rew_list. math.
+        -- xchange <- MList_cons.
+Qed.
 (** [] *)
 
 (* ================================================================= *)

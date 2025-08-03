@@ -17,8 +17,7 @@
 - `xpull` to extract pure facts and quantifiers from the LHS of [==>].
 - `xchange E` for exploiting a lemma `E` with a conclusion of the form `H1 ==> H2` or `H1 = H2`.
 - `xchange <- E` :  for exploiting an entailment `H2 ==> H1` in the case
-- `xchanges*` do `xchanges` and then perform eauto.
-`E` is a lemma with a conclusion of the form [H1 = H2].
+- `xchanges*` do `xchanges` and then perform eauto. `E` is a lemma with a conclusion of the form [H1 = H2].
 - `xchanges` is a shorthand for `xchange` followed with `xsimpl`.
 - `xfun` to reason about function definitions.
 - `xtriple` to establish specifications for abstract functions.
