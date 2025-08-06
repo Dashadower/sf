@@ -675,7 +675,20 @@ Lemma triple_mfree : forall L p,
   triple (mfree p)
     (MList L p)
     (fun _ => \[]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using. 
+  intros.
+  gen p.
+  induction_wf IH: list_sub L.
+  intros. xwp.
+  xapp. xif.
+  - intros. unfold not in H.
+    xchange MList_if. case_if.
+    xpull. intros. xapp. xapp. xapp.
+    + subst. apply list_sub_cons.
+    + xsimpl.
+  - intros. xval. xchange MList_if.
+    case_if. xsimpl.
+Qed.
 
 (** [] *)
 
@@ -693,11 +706,29 @@ OCaml:
       if p2 == null
         then p1
         else (let p3 = p2.tail in
-              p2.tail <- p1;
-              mrev_aux p2 p3)
+                p2.tail <- p1;
+                mrev_aux p2 p3
+              )
 
     let mrev p =
       mrev_aux null p
+
+null [1, 2, 3]
+p1 : null, p2: 1, p3 : 2 -> 3
+p2 : 1 -> null
+mrev_aux  1 -> null, 2 -> 3
+
+mrev_aux 1 -> null, 2 -> 3
+p1 : 1 -> null, p2 : 2 -> 3, p3 : 3
+p1 : 1 -> null, p2 : 2 -> 1 -> null, p3 : 3
+mrev_aux 2 -> 1 -> null, 3
+
+p1 : reversed part
+p2 : what remains to be reversed
+
+mrev_aux p1_x :: p1', p2_x :: p2'
+-> mrev [p2_x] ++ p1_x :: p1', p2'
+
 *)
 
 Definition mrev_aux : val :=
@@ -707,8 +738,9 @@ Definition mrev_aux : val :=
          then 'p1
          else (
            let 'p3 = 'p2`.tail in
-           'p2`.tail := 'p1;
-           'f 'p2 'p3) }>.
+            'p2`.tail := 'p1;
+            'f 'p2 'p3
+            ) }>.
 
 Definition mrev : val :=
   <{ fun 'p =>
@@ -728,13 +760,64 @@ Definition mrev : val :=
     variable. The syntax [xsimpl v] is also available if you want to specify the
     witness [x] inside a goal of the form [H1 ==> (\exists x, H2)]. *)
 
-(* FILL IN HERE *)
+Lemma triple_mrev_aux_null :
+  triple (mrev_aux null null)
+    \[]
+    (fun ret => \[ ret = null]).
+Proof.
+  xwp.
+  xapp.
+  xif.
+  - intros. xval. xsimpl. auto.
+  - intros. xsimpl.
+Qed.
+
+
+Lemma triple_mrev_aux : forall (ref_rev ref_L : loc) L L_rev,
+  triple (mrev_aux ref_rev ref_L)
+    (MList L ref_L \* MList L_rev ref_rev)
+    (funloc ret => (MList (rev L ++ L_rev) ret)).
+Proof.
+  intros.
+  gen ref_rev ref_L L_rev.
+  induction_wf IH: list_sub L.
+  intros.
+  xwp.
+  xapp.
+  xchange (MList_if ref_L).
+  xif; intros.
+  - case_if. xval. xsimpl*. intros. subst. rew_list. xsimpl*.
+  - case_if. xpull. intros. subst. rew_list. xapp. xapp. xapp.
+    xchange <- MList_cons. xsimpl*.
+Qed.
+
+
+(* Lemma triple_mrev_aux : forall p1 p2 p1_x p2_x p1' p2',
+  triple (mrev_aux p1 p2)
+    (MList (p1_x :: p1') p1 \* MList (p2_x :: p2') p2)
+    (MList [p2_x] ++ (p1_x :: p1')). *)
 
 Lemma triple_mrev : forall L p,
   triple (mrev p)
     (MList L p)
     (funloc q => MList (rev L) q).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros L.
+  induction_wf IH: list_sub L.
+  intros.
+  xwp.
+  xchange MList_if.
+  case_if.
+  - (* L = nil *)
+    rewrite C. xapp triple_mrev_aux_null; subst. intros. xsimpl.
+    + apply H0.
+    + subst. xchange <- MList_nil. reflexivity.
+  - (* L = x :: L' *) 
+    xpull. intros. xchange <- MList_cons. xchange <- (MList_nil null). reflexivity.
+    xapp triple_mrev_aux. intros. subst. xsimpl*. rew_list. xsimpl*.
+Qed.
+
+
 
 (** [] *)
 
@@ -865,7 +948,17 @@ Lemma triple_push : forall L s x,
   triple (push s x)
     (Stack L s)
     (fun u => Stack (x::L) s).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  gen s x.
+  induction_wf IH: list_sub L.
+  intros.
+  xwp.
+  unfold Stack.
+  xpull. intros.
+  xapp. xapp. intros. xapp. xapp. xapp. xapp. 
+  xsimpl. rew_list. math.
+Qed.
 
 (** [] *)
 
@@ -895,7 +988,18 @@ Lemma triple_pop : forall L s,
   triple (pop s)
     (Stack L s)
     (fun x => \exists L', \[L = x::L'] \* Stack L' s).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros L.
+  induction_wf IH: list_sub L.
+  intros. xwp.
+  unfold Stack.
+  xpull. intros.
+  destruct L eqn:EqL.
+  - xsimpl.
+  - xapp. xchange MList_cons. intros. xapp. xapp. xapp. xapp.
+    xapp. xapp. xapp. xval. xsimpl; auto. rew_list. math.
+Qed.
+
 
 (** [] *)
 
@@ -915,7 +1019,17 @@ Lemma triple_top : forall L s,
   triple (top s)
     (Stack L s)
     (fun x => \exists L', \[L = x::L'] \* Stack L s).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  xwp.
+  unfold Stack.
+  xpull. intros.
+  xapp.
+  destruct L.
+  - xsimpl.
+  - xchange MList_cons. intros. xapp. xsimpl*. xchange <- MList_cons.
+Qed.
+  
 
 (** [] *)
 
@@ -1066,7 +1180,13 @@ Lemma triple_mnode' : forall T1 T2 n p1 p2,
   triple (mnode n p1 p2)
     (MTree T1 p1 \* MTree T2 p2)
     (funloc p => MTree (Node n T1 T2) p).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using. 
+  intros.
+  xapp triple_mnode.
+  intros.
+  xsimpl*.
+  xchange <- MTree_Node.
+Qed.
 
 #[global] Hint Resolve triple_mnode' : triple.
 
@@ -1114,7 +1234,27 @@ Lemma triple_tree_copy : forall p T,
   triple (tree_copy p)
     (MTree T p)
     (funloc q => (MTree T p) \* (MTree T q)).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using. 
+  intros p T.
+  gen p.
+  induction_wf IH: tree_sub T.
+  intros.
+  xwp.
+  xchange MTree_if.
+  case_if.
+  - xapp. intros. rewrite H0. xif.
+    + intros. rewrite C. xval. xsimpl*. rewrite H. xchange <- MTree_Leaf.
+      * apply C.
+      * rewrite C. xsimpl*. xchange <- MTree_Leaf. reflexivity.
+    + intros. xsimpl*.
+  - xpull. intros. xapp. xif.
+    + intros. xsimpl*.
+    + unfold not. intros. xapp. xapp. xapp. xapp.
+      * rewrite H. apply tree_sub_1.
+      * intros. xapp.
+        -- rewrite H. apply tree_sub_2.
+        -- intros. xapp. intros. subst. xsimpl*. xchange <- MTree_Node.
+Qed.
 
 (** [] *)
 
@@ -1175,13 +1315,52 @@ Fixpoint treesum (T:tree) : int :=
     Prove the correctness of the function [mtreesum]. Hint: to begin with, state
     and prove the specification lemma [triple_treeacc]. *)
 
-(* FILL IN HERE *)
+Lemma triple_treeacc : forall c n p T,
+  triple (treeacc c p)
+    (c ~~> n \* MTree T p)
+    (fun _ => c ~~> (n + treesum T) \* MTree T p). 
+Proof.
+  intros c n p T.
+  gen c n p.
+  induction_wf IH: tree_sub T.
+  intros.
+  xwp.
+  xapp. xif.
+  + intros. xapp. xchange MTree_if.
+    case_if. xpull. intros. xapp. xapp.
+    xapp. xapp. xapp.
+    * rewrite H0. apply tree_sub_1.
+    * xapp. xapp.
+      -- rewrite H0. apply tree_sub_2.
+      -- subst. xsimpl*.
+          ++ unfold treesum. math.
+          ++ xchange <- MTree_Node.
+  + intros. xval. xchange MTree_if.
+    * case_if. xpull. intros. subst. xsimpl*.
+      -- simpl. math.
+      -- xchange <- MTree_Leaf. congruence.
+Qed.
 
 Lemma triple_mtreesum : forall T p,
   triple (mtreesum p)
     (MTree T p)
     (fun r => \[r = treesum T] \* (MTree T p)).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros T p.
+  gen p.
+  induction_wf IH: tree_sub T.
+  intros.
+  xwp.
+  xapp. intros. 
+  xchange MTree_if.
+  case_if.
+  - xpull. intros. subst. xchange <- (MTree_Leaf null).
+    + reflexivity.
+    + xapp triple_treeacc. xapp. xsimpl*.
+  - xpull. intros. subst. xchange <- MTree_Node. xapp triple_treeacc.
+    xapp. xsimpl*.
+Qed.
+
 
 (** [] *)
 
@@ -1313,7 +1492,10 @@ Lemma triple_apply_counter_abstract : forall f n,
   triple (f ())
     (IsCounter f n)
     (fun r => \[r = n+1] \* (IsCounter f (n+1))).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. xtriple.
+  unfold IsCounter. xpull. intros. xapp. xsimpl*.
+Qed.
 
 (** [] *)
 
@@ -1356,7 +1538,15 @@ Lemma triple_test_counter :
   triple (test_counter ())
     \[]
     (fun r => \[r = 3] \* (\exists H, H)).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using. 
+  xwp.
+  xapp triple_create_counter_abstract. intros.
+  xapp triple_create_counter_abstract. intros.
+  xapp triple_apply_counter_abstract.
+  xapp triple_apply_counter_abstract.
+  xapp triple_apply_counter_abstract.
+  xapp. xsimpl*.
+Qed.
 
 (** [] *)
 
@@ -1461,6 +1651,7 @@ Proof using.
 Qed.
 
 
+
 (* ================================================================= *)
 (** ** Specification of an Iterator on Mutable Lists *)
 
@@ -1497,6 +1688,16 @@ Definition miter : val :=
 
     Prove the correctness of [triple_miter]. *)
 
+Lemma MList_null : forall L,
+  \[L = nil] ==> (MList L null).
+Proof using.
+  intros.
+  induction L.
+  - xpull. intros. xchange <- MList_nil. reflexivity.
+  - xpull.
+Qed.
+
+
 Lemma triple_miter : forall (I:list val->hprop) L (f:val) p,
   (forall x L1 L2, L = L1++x::L2 ->
     triple (f x)
@@ -1505,7 +1706,56 @@ Lemma triple_miter : forall (I:list val->hprop) L (f:val) p,
   triple (miter f p)
     (MList L p \* I nil)
     (fun u => MList L p \* I L).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+intros I L.
+gen I.
+  introv Hn.
+  (* 
+  x1@x0
+  triple (miter f x0)
+    (I (x) \* MList x1 x0)
+    (I x :: x1)
+   *)
+  cuts G: (forall (rest_list proven_list : list val) (ref_rest : loc), 
+    list_sub rest_list L ->
+    L = proven_list ++ rest_list ->
+    triple (miter f ref_rest)
+    (I proven_list \* MList rest_list ref_rest)
+    ( fun u => I (proven_list ++ rest_list) \* MList rest_list ref_rest)
+  ).
+  - xwp. xapp. xif; intros.
+    + xchange MList_if. case_if. xpull. intros. subst.
+      xapp. xapp (Hn x nil x1).
+      * rew_list. reflexivity.
+      * xapp. rew_list. xapp G; rew_list.
+        -- apply list_sub_cons.
+        -- reflexivity.
+        -- xsimpl. xchange <- MList_cons.
+    + xval. xchange <- (MList_nil p). 
+      * congruence.
+      * xchange MList_if. case_if.
+        xpull. intros. subst. xsimpl*.
+  - intros rest_list.
+    induction_wf IH: list_sub rest_list.
+    intros. xwp.
+    xapp. xif; intros.
+    + xchange MList_if. case_if. xpull. intros. subst.
+      xapp. xapp (Hn x proven_list x1).
+      * reflexivity.
+      * xapp. xapp.
+        -- apply list_sub_cons.
+        -- clear. induction proven_list.
+           ++ rew_list. apply list_sub_cons.
+           ++ rew_list. assert (a :: proven_list ++ x :: x1 = a :: (proven_list ++ x :: x1)).
+              ** reflexivity.
+              ** apply list_sub_tail. assumption.
+        -- rew_list. reflexivity.
+        -- xchange <- MList_cons. rew_list. xsimpl*.
+    + xval. assert(ref_rest = null) by congruence. xchange <- (MList_nil ref_rest).
+      * assumption.
+      * xchange (MList_if ref_rest). case_if. xpull. intros.
+        subst. xsimpl*. rew_list. xsimpl*.
+Qed.
 
 (** [] *)
 
@@ -1550,7 +1800,15 @@ Lemma triple_mlength_using_miter : forall p L,
   triple (mlength_using_miter p)
     (MList L p)
     (fun r => \[r = length L] \* MList L p).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  xwp.
+  xapp. intros. xfun. intros f Hf.
+  xapp (triple_miter (fun K => x0 ~~> length K)).
+  - intros. xtriple.
+    xapp. xapp. xsimpl. rew_list. math.
+  - xapp. xsimpl*.
+Qed.
 
 (** [] *)
 
@@ -1573,6 +1831,11 @@ OCaml:
 
     let cps_facto n =
       cps_facto_aux n (fun r -> r)
+*)
+
+(*
+cps_facto 5 (fun r -> r)
+ - n = 5, k = (\r: r) calls cpx_aux 4 (fun r -> (5 * 4)) => 5, fact 5
 *)
 
 Definition cps_facto_aux : val :=
@@ -1603,13 +1866,58 @@ Import Facto.
     mathematical reasoning, use the same pattern as in the proof of [factorec],
     applying the tactics [rewrite facto_init] and [rewrite (@facto_step n)]. *)
 
+(*
+Parameter facto_init : forall n,
+  0 <= n <= 1 ->
+  facto n = 1.
+
+Parameter facto_step : forall n,
+  n >= 1 ->
+  facto n = n * (facto (n-1)).
+*)
+
+(*
+for all n >= 0 and a,
+if running continuation k(a) returns result F(a) for some function F,
+then cps_facto_aux n k returns F(facto n)
+*)
 Lemma triple_cps_facto_aux : forall (n:int) (k:val) (F:int->int),
   n >= 0 ->
   (forall (a:int), triple (k a) \[] (fun r => \[r = F a])) ->
   triple (cps_facto_aux n k)
     \[]
     (fun r => \[r = F (facto n)]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros n.
+  induction_wf IH: (downto 0) n. (* Assume the lemma holds for all y, 0 <= y < n *)
+  intros.
+  xwp.
+  xapp. xif; intros.
+  - xapp. xsimpl. rewrite facto_init; math.
+  - (* n > 0 *) 
+    xfun. intros cont Hcont. (* ∀ vx, cont satifies {P} cont vx {Q} *) 
+    xapp.
+    (*
+    IH
+    y : n - 1
+    k : cont
+    F : ??
+    *)
+    remember (n - 1) as y.
+    assert (IH_1: downto 0 y n) by math.
+    assert (IH_2: y >= 0) by math.
+    specialize (IH y).
+    rewrite Heqy in *.
+    specialize (IH IH_1).
+    specialize (IH cont).
+    specialize (IH (fun arg => F (n * arg))).
+    specialize (IH IH_2).
+    xapp IH.
+    + intros. xapp Hcont.
+      * xapp. xapp H0.
+      * xsimpl. intros. assumption. 
+    + xsimpl. rewrite (@facto_step n); math.
+Qed.
 
 (** [] *)
 
@@ -1624,7 +1932,19 @@ Lemma triple_cps_facto : forall n,
   triple (cps_facto n)
     \[]
     (fun r => \[r = facto n]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  xwp.
+  xfun. intros.
+  (* xapp (>> triple_cps_facto_aux vf). *)
+  pose proof triple_cps_facto_aux.
+  specialize (H1 n). specialize (H1 vf).
+  specialize (H1 (fun b => b)).
+  xapp H1; try math.
+  - intros. xapp H0; xsimpl*. xval. xsimpl. reflexivity.
+  - xsimpl. reflexivity.
+Qed.
+  
 
 (** [] *)
 
