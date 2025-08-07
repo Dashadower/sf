@@ -2022,7 +2022,46 @@ Lemma triple_cps_append_aux : forall H Q (L1 L2:list val) (p1 p2:loc) (k:val),
   triple (cps_append_aux p1 p2 k)
     (MList L1 p1 \* MList L2 p2 \* H)
     Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros H Q L1.
+  gen H Q.
+  induction_wf IH: list_sub L1.
+  introv Ht.
+  xwp.
+  xapp. xchange (MList_if p1 L1). 
+  case_if.
+    - (* L1 = nil *)
+     xsimpl*. intros. xif.
+     + intros. xapp. subst. rew_list. xsimpl*.
+     + intros. xsimpl*.
+    - (* L1 = x :: L' *)
+      xpull. intros L1_head L1_cons_ref L1_cons. intro L1_identity.
+      xif.
+      + intros. xsimpl*.
+      + intros. subst. xapp. xfun. introv Hcont.
+        specialize (IH L1_cons).
+        assert (list_sub L1_cons (L1_head :: L1_cons)) by apply list_sub_cons.
+        specialize (IH H1). clear H1.
+        (*
+        H : H * p1 ~~~> `{ head := L1_head; tail := L1_cons_ref}
+        p1 : L1_cons_ref
+        Q : Q
+        L2 : L2
+        p1 : L1_cons_ref
+        p2 : p2
+        k : vf
+        *)
+        specialize (IH (H \* p1 ~~~> `{ head := L1_head; tail := L1_cons_ref})).
+        specialize (IH Q).
+        specialize (IH L2).
+        specialize (IH L1_cons_ref).
+        specialize (IH p2).
+        xapp IH.
+        * intros. apply Hcont. xapp. xapp. xchange <- MList_cons. xsimpl*.
+        * xsimpl*.
+Qed.
+  
+
 
 (** [] *)
 
@@ -2036,7 +2075,19 @@ Lemma triple_cps_append : forall (L1 L2:list val) (p1 p2:loc),
   triple (cps_append p1 p2)
     (MList L1 p1 \* MList L2 p2)
     (funloc p3 => MList (L1++L2) p3).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  xwp.
+  xfun.
+  intros cont.
+  introv Hcont.
+  (* xapp triple_cps_append_aux. *)
+  xapp (@ triple_cps_append_aux \[] (funloc p3 => MList (L1 ++ L2) p3)).
+  - intros. xapp (Hcont p3 (MList (L1 ++ L2) p3 \* \[]) (funloc p0 => MList (L1 ++ L2) p0)).
+    + xval. xsimpl. reflexivity.
+    + intros. xsimpl. reflexivity.
+  - intros. xsimpl. reflexivity.
+Qed.
 
 (** [] *)
 
