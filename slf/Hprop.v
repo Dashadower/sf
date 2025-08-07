@@ -374,6 +374,7 @@ Module HpropProofs.
 Lemma hstar_hexists : forall A (J:A->hprop) H,
   (\exists x, J x) \* H = \exists x, (J x \* H).
 Proof using.
+  Set Printing Parentheses.
 (** First, we exploit extensionality, using [hprop_eq] or [himpl_antisym]. *)
   intros. apply hprop_eq. split.
 (** Then we reveal the definitions of [==>], [hexists] and [hstar]. *)
@@ -397,7 +398,13 @@ Qed.
 
 Lemma hstar_hempty_l : forall H,
   \[] \* H = H.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. apply hprop_eq. split.
+  - intros P. apply hstar_inv in P. destruct P as (h1 & h2 & (P1 & P2 & P3 & P4)).
+    apply hempty_inv in P1. subst. rewrite Fmap.union_empty_l. assumption.
+  - intros. rewrite <- Fmap.union_empty_l. apply hstar_intro; auto.
+    hnf. reflexivity.
+Qed.
 
 (** [] *)
 

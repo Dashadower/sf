@@ -2060,7 +2060,6 @@ Proof using.
         * intros. apply Hcont. xapp. xapp. xchange <- MList_cons. xsimpl*.
         * xsimpl*.
 Qed.
-  
 
 
 (** [] *)

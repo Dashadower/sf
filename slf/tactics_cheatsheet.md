@@ -29,4 +29,6 @@
 - ``Global Transparent X.`` : undos the above command
 
 
+- `hnf` : unfolds head constants
+
 y = L'
