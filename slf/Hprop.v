@@ -479,7 +479,14 @@ Proof using.
     { exists* h2 h3. }
     { rewrite* @Fmap.disjoint_union_eq_r. }
     { rewrite* @Fmap.union_assoc in U. } }
-(* FILL IN HERE *) Admitted.
+  intros.
+  destruct H. destruct H as (h2 & H). destruct H as (H & (H4 & (H5 & H6))).
+  destruct H4. destruct H0. destruct H0 as (H7 & H8 & H9 & H10).
+  hnf. subst. rewrite Fmap.disjoint_union_eq_r in H5. destruct H5.
+  exists (x \u x0) (x1). split.
+  - apply hstar_intro; auto.
+  - split; auto. split; auto. rewrite Fmap.union_assoc. reflexivity.
+Qed.
 
 (** [] *)
 
@@ -499,7 +506,10 @@ Qed.
 
 Lemma hstar_comm_assoc : forall H1 H2 H3,
   H1 \* H2 \* H3 = H2 \* H1 \* H3.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. rewrite <- hstar_assoc. rewrite <- hstar_assoc.
+  rewrite (hstar_comm H1 H2). reflexivity.
+Qed.
 
 (** [] *)
 
@@ -528,7 +538,22 @@ Proof using. (* FILL IN HERE *) Admitted.
 
 Lemma hstar_hpure_l : forall P H h,
   (\[P] \* H) h = (P /\ H h).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply propositional_extensionality.
+  split; intros.
+  - destruct H0 as (h' & h'' & H0 & H1 & H2 & H3).
+    apply hpure_inv in H0. destruct H0. subst.
+    split.
+    + assumption.
+    + rewrite Fmap.union_empty_l. assumption.
+  - destruct H0. hnf.
+    pose proof (Fmap.union_empty_l h).
+    exists (@Fmap.empty loc val) h.
+    split.
+    + apply hpure_intro. assumption.
+    + split; auto.
+Qed.
 
 (** [] *)
 
@@ -668,7 +693,10 @@ Axiom functional_extensionality : forall A B (f g:A->B),
 Lemma predicate_extensionality_derived : forall A (P Q:A->Prop),
   (forall x, P x <-> Q x) ->
   P = Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. apply functional_extensionality. intros. specialize (H x). apply propositional_extensionality.
+  assumption.
+Qed.
 
 (** [] *)
 
