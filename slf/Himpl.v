@@ -92,7 +92,10 @@ Lemma himpl_antisym : forall H1 H2,
   (H1 ==> H2) ->
   (H2 ==> H1) ->
   H1 = H2.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. apply predicate_extensionality. intros.
+  split; auto.
+Qed.
 
 (** [] *)
 
@@ -131,7 +134,15 @@ Lemma qimpl_antisym : forall Q1 Q2,
   (Q1 ===> Q2) ->
   (Q2 ===> Q1) ->
   (Q1 = Q2).
-Proof using.  (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply functional_extensionality.
+  intros.
+  unfold "===>" in *. apply predicate_extensionality. split. intros.
+  specialize (H x). auto. specialize (H0 x). auto.
+Qed.
+
+
 
 (** [] *)
 
@@ -176,7 +187,10 @@ Lemma himpl_hstar_hpure_r : forall (P:Prop) H H',
   P ->
   (H ==> H') ->
   H ==> (\[P] \* H').
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. hnf. intros.
+  rewrite hstar_hpure_l. split; auto.
+Qed.
 
 (** [] *)
 
@@ -193,7 +207,11 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma himpl_hstar_hpure_l : forall (P:Prop) (H H':hprop),
   (P -> H ==> H') ->
   (\[P] \* H) ==> H'.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  hnf. intros. destruct H1 as (H2 & H3 & H4 & H5 & H6 & H7).
+  destruct H4. apply H0 in H4. apply H4. subst. rewrite union_empty_l. assumption.
+Qed.
 
 (** [] *)
 
@@ -208,7 +226,10 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma himpl_hexists_r : forall A (x:A) H J,
   (H ==> J x) ->
   H ==> (\exists x, J x).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. hnf. intros.
+  hnf. exists x. apply H0. assumption.
+Qed.
 
 (** [] *)
 
@@ -231,7 +252,11 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma himpl_hexists_l : forall (A:Type) (H:hprop) (J:A->hprop),
   (forall x, J x ==> H) ->
   (\exists x, J x) ==> H.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  hnf. intros.
+  destruct H1. specialize (H0 x). apply H0. assumption.
+Qed.
 
 (** [] *)
 
@@ -294,7 +319,15 @@ Qed.
 
 Lemma hexists_named_eq : forall H,
   H = (\exists h, \[H h] \* (= h)).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. apply functional_extensionality.
+  intros. apply propositional_extensionality.
+  split.
+  - intros. apply hexists_intro with (x := x). rewrite hstar_hpure_l.
+    auto.
+  - intros. destruct H0. rewrite hstar_hpure_l in H0. destruct H0. subst.
+    assumption.
+Qed.
 
 (** [] *)
 
@@ -427,6 +460,7 @@ Lemma xsimpl_demo_rhs_hexists : forall H1 H2 H3 H4 (p:loc),
   H1 ==> H2 \* \exists (n:int), (p ~~> n \* H3) \* H4.
 Proof using.
   intros. xsimpl.
+    (* Show Existentials. *)
 (** The output of the command [Show Existentials] shows [Existential 1], named
     [?Goal], of type [int]. This "evar" corresponds to the value assigned to the
     existentially quantified variable [n]. *)
@@ -519,7 +553,7 @@ Lemma xpull_example_1 : forall (p:loc),
   \exists (n:int), p ~~> n ==>
   \exists (m:int), p ~~> (m + 1).
 Proof using.
-  intros. xpull.
+  intros. xpull. intros.
 Abort.
 
 Lemma xpull_example_2 : forall (H:hprop),
@@ -608,49 +642,73 @@ Parameter case_study_1 : forall p q,
       p ~~> 3 \* q ~~> 4
   ==> q ~~> 4 \* p ~~> 3.
 
+(* T *)
+
 Parameter case_study_2 : forall p q,
       p ~~> 3
   ==> q ~~> 4 \* p ~~> 3.
+
+(* F *)
 
 Parameter case_study_3 : forall p q,
       q ~~> 4 \* p ~~> 3
   ==> p ~~> 3.
 
+(* F *)
+
 Parameter case_study_4 : forall p q,
       \[False] \* p ~~> 3
   ==> p ~~> 4 \* q ~~> 4.
+
+(* T *)
 
 Parameter case_study_5 : forall p q,
       p ~~> 3 \* q ~~> 4
   ==> \[False].
 
+(* F *)
+
 Parameter case_study_6 : forall p,
       p ~~> 3 \* p ~~> 4
   ==> \[False].
+
+(* T *)
 
 Parameter case_study_7 : forall p,
       p ~~> 3 \* p ~~> 3
   ==> \[False].
 
+(* T *)
+
 Parameter case_study_8 : forall p,
       p ~~> 3
   ==> \exists n, p ~~> n.
+
+(* T *)
 
 Parameter case_study_9 : forall p,
       exists n, p ~~> n
   ==> p ~~> 3.
 
+(* F *)
+
 Parameter case_study_10 : forall p,
       \exists n, p ~~> n \* \[n > 0]
   ==> \exists n, \[n > 1] \* p ~~> (n-1).
+
+(* T *)
 
 Parameter case_study_11 : forall p q,
       p ~~> 3 \* q ~~> 3
   ==> \exists n, p ~~> n \* q ~~> n.
 
+(* T *)
+
 Parameter case_study_12 : forall p n,
       p ~~> n \* \[n > 0] \* \[n < 0]
   ==> p ~~> n \* p ~~> n.
+
+(* T *)
 
 End EntailmentQuiz.
 
@@ -754,10 +812,33 @@ Implicit Types n : int.
     [hstar_assoc], or [hstar_comm_assoc] which combines the two, and exploit
     [himpl_frame_l] or [himpl_frame_r] to cancel out matching pieces. *)
 
+(*
+hstar_comm_assoc
+     : forall H1 H2 H3 : hprop,
+H1 \* H2 \* H3 = H2 \* H1 \*
+H3
+
+hstar_comm
+     : forall H1 H2 : hprop,
+H1 \* H2 = H2 \* H1
+
+hstar_assoc
+     : forall H1 H2 H3 : hprop,
+(H1 \* H2) \* H3 =
+H1 \* H2 \* H3
+*)
 Lemma himpl_example_1 : forall p1 p2 p3 p4,
       p1 ~~> 6 \* p2 ~~> 7 \* p3 ~~> 8 \* p4 ~~> 9
   ==> p4 ~~> 9 \* p3 ~~> 8 \* p2 ~~> 7 \* p1 ~~> 6.
-Proof using. (* FILL IN HERE *) Admitted.
+  Proof using.
+  intros. Set Printing Parentheses. rewrite (hstar_comm_assoc (p2~~>7) (p3~~>8) _).
+  rewrite (hstar_comm_assoc (p1 ~~> 6) _ _).
+  rewrite (hstar_comm_assoc (p4 ~~> 9) _ _).
+  rewrite (hstar_comm (p4 ~~> 9)).
+  rewrite <- (hstar_assoc (p1 ~~> 6)).
+  rewrite (hstar_comm (p2 ~~> 7)).
+  apply himpl_frame_l. hnf. intros. assumption.
+Qed.
 
 (** [] *)
 
@@ -770,7 +851,19 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma himpl_example_2 : forall p1 p2 p3 n,
       p1 ~~> 6 \* \[n > 0] \* p2 ~~> 7 \* \[n < 0]
   ==> p3 ~~> 8.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  rewrite hstar_comm.
+  rewrite (hstar_comm (p2 ~~> 7)).
+  rewrite hstar_assoc.
+  apply himpl_hstar_hpure_l.
+  intros.
+  rewrite hstar_assoc.
+  apply himpl_hstar_hpure_l.
+  intros.
+  math.
+Qed.
+  
 
 (** [] *)
 
@@ -784,7 +877,14 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma himpl_example_3 : forall p,
       \exists n, p ~~> n \* \[n > 0]
   ==> \exists n, \[n > 1] \* p ~~> (n-1).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply himpl_hexists_l. intros. rewrite hstar_comm.
+  apply himpl_hstar_hpure_l. intros. apply himpl_hexists_r with (x := x + 1).
+  apply himpl_hstar_hpure_r.
+  - math.
+  - math_rewrite (x + 1 - 1 = x). hnf. intros. assumption.
+Qed.
 
 (** [] *)
 
@@ -810,7 +910,10 @@ Lemma xchange_lemma : forall H1 H1' H H' H2,
   H ==> H1 \* H2 ->
   H1' \* H2 ==> H' ->
   H ==> H'.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. hnf in *. intros. apply H3 in H5. destruct H5 as (h1 & g2 & H5 & H6 & H7 & H8).
+  apply H4. rewrite H8. apply hstar_intro; auto.
+Qed.
 
 (** [] *)
 
@@ -839,7 +942,11 @@ Module EntailmentRulesProofs.
 Lemma himpl_frame_l : forall H2 H1 H1',
   H1 ==> H1' ->
   (H1 \* H2) ==> (H1' \* H2).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. 
+  unfold hstar. hnf. intros. destruct H0 as (h1 & h2 & H3 & H4 & H5 & H6).
+  hnf in H. specialize (H h1). apply H in H3. exists h1 h2. auto.
+Qed.
 
 (** [] *)
 
@@ -852,7 +959,11 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma himpl_frame_r : forall H1 H2 H2',
   H2 ==> H2' ->
   (H1 \* H2) ==> (H1 \* H2').
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. unfold hstar. hnf in *. intros.
+  destruct H0 as (h1 & h2 & H3 & H4 & H5 & H6).
+  exists h1 h2. auto.
+Qed.
 
 (** [] *)
 
@@ -863,11 +974,21 @@ Proof using. (* FILL IN HERE *) Admitted.
     exploit the transitivity of entailment ([himpl_trans]) and the asymmetric
     monotonicity results from the two prior exercises. *)
 
+(*
+himpl_trans
+     : forall H2 H1 H3 : hprop, H1 ==> H2 -> H2 ==> H3 -> H1 ==> H3
+*)
+
 Lemma himpl_frame_lr : forall H1 H1' H2 H2',
   H1 ==> H1' ->
   H2 ==> H2' ->
   (H1 \* H2) ==> (H1' \* H2').
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. hnf in *. intros.
+  pose proof himpl_trans. hnf in *. destruct H3 as (h1 & h2 & h3 & h4 & h5 & h6).
+  exists h1 h2.
+  split; try auto.
+Qed.
 
 (** [] *)
 

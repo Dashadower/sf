@@ -5,6 +5,7 @@
 - `xapp H` : apply a lemma `H`. This is normally used to
   progress a SL triple using `H`, as to `xchange` acting as vanilla `apply`
 - `xsimpl` : like simpl, but works on SLF proofs
+- `xsimpl n m ...` : provide concrete arguments for matching. Use `__` istead of `_` for leaving holes.
 - `xsimpl*` : perform `xsimpl` and then `auto` immediately
 - `math` : `lia` for SLF
 - `xval` : if the code returns a value, try to find the relationship between the value and the postcondition
@@ -17,6 +18,7 @@
 
 - `xpull` to extract pure facts and quantifiers from the LHS of [==>].
 - `xchange E` for exploiting a lemma `E` with a conclusion of the form `H1 ==> H2` or `H1 = H2`.
+Assume an entailment goal of the form `H1 \* H2 \* H3 ==> H4`. Assume an entailment assumption `M`, say `H2 ==> H2'`. Then `xchange M` turns the goal into `H1 \* H2' \* H3 ==> H4`, effectively replacing `H2` with `H2'`.
 - `xchange <- E` :  for exploiting an entailment `H2 ==> H1` in the case
 - `xchanges*` do `xchanges` and then perform eauto. `E` is a lemma with a conclusion of the form [H1 = H2].
 - `xchanges` is a shorthand for `xchange` followed with `xsimpl`.
