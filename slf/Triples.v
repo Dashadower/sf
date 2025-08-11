@@ -1328,7 +1328,8 @@ Proof using.
       * inversion H6.
       * apply M with (v1 := v). assumption.
     + destruct H as (s_1 & t_1 & H). inversion H2; subst.
-      * eapply H1; eauto.
+      * eapply H1; eauto. admit.
+Admitted.
 
 
 
@@ -1571,7 +1572,11 @@ Lemma hoare_conseq : forall t H Q H' Q',
   H ==> H' ->
   Q' ===> Q ->
   hoare t H Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. hnf in *. intros. specialize (H1 s). apply H1 in H3. apply H0 in H3.
+  destruct H3 as (s' & v & H3 & H4). exists s' v. split; auto.
+  specialize (H2 v). apply H2 in H4. assumption.
+Qed.
 
 (** [] *)
 
@@ -1594,7 +1599,17 @@ Definition btriple (t:trm) (H:hprop) (Q:val->hprop) : Prop :=
 Lemma btriple_frame : forall t H Q H',
   btriple t H Q ->
   btriple t (H \* H') (Q \*+ H').
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  hnf in *.
+  intros H'0.
+  specialize (H0 (H' \* H'0)).
+  hnf in *. rewrite hstar_assoc.
+  intros. apply H0 in H1.
+  destruct H1 as (s' & v & H1 & H2).
+  exists s' v.
+  split; auto. rewrite hstar_assoc. assumption.
+Qed.
 
 (** [] *)
 
