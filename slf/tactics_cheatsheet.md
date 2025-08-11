@@ -16,11 +16,11 @@
 - `gen` : `generalize dependent/revert` for SLF.
 
 
-- `xpull` to extract pure facts and quantifiers from the LHS of [==>].
+- `xpull` to extract pure facts and quantifiers from the LHS of `==>`.
 - `xchange E` for exploiting a lemma `E` with a conclusion of the form `H1 ==> H2` or `H1 = H2`.
 Assume an entailment goal of the form `H1 \* H2 \* H3 ==> H4`. Assume an entailment assumption `M`, say `H2 ==> H2'`. Then `xchange M` turns the goal into `H1 \* H2' \* H3 ==> H4`, effectively replacing `H2` with `H2'`.
 - `xchange <- E` :  for exploiting an entailment `H2 ==> H1` in the case
-- `xchanges*` do `xchanges` and then perform eauto. `E` is a lemma with a conclusion of the form [H1 = H2].
+- `xchanges*` do `xchanges` and then perform eauto. `E` is a lemma with a conclusion of the form `H1 = H2`.
 - `xchanges` is a shorthand for `xchange` followed with `xsimpl`.
 - `xfun` to reason about function definitions.
 - `xtriple` convert a `triple () ()` into a pre-code-post format that x-tactics are admitted on.
@@ -33,4 +33,12 @@ Assume an entailment goal of the form `H1 \* H2 \* H3 ==> H4`. Assume an entailm
 
 - `hnf` : unfolds head constants
 
-y = L'
+- `lets H: L x y` introduces an hypothesis named `H`, whose statement
+is the specialization of the lemma `L` on the arguments `x` and `y`.
+It is equivalent to `generalize (L _ _ .. _ x _ _ .. _ _ y); intros H`,
+for the appropriate number of underscore symbols.
+- `forwards H: L x y` is very similar to `lets`, except that it attempts
+to instantiate all arguments of `L`. It is equivalent to
+`generalize (L _ _ .. _ x _ _ .. _ _ y _ _ .. _ _); intros H`.
+- `specializes H x y` specializes an existing hypothesis `H` in place.
+It is equivalent to `lets H2: H x y; clear H; rename H2 into H`.

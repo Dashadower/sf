@@ -712,7 +712,11 @@ Lemma triple_conseq_frame : forall H2 H1 Q1 t H Q,
 
     Prove the combined consequence-frame rule. *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply triple_conseq with (H' := H1 \* H2) (Q' := (Q1 \*+ H2)); try assumption.
+  apply triple_frame. assumption.
+Qed.
 
 (** [] *)
 
@@ -727,7 +731,13 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma triple_hpure' : forall t (P:Prop) Q,
   (P -> triple t \[] Q) ->
   triple t \[P] Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply triple_conseq with (H' := \[P] \* \[]) (Q' := Q); try auto.
+  - apply triple_hpure. assumption.
+  - xsimpl. intros. assumption.
+Qed.
+  
 
 (** [] *)
 
@@ -782,6 +792,7 @@ Proof using. unfolds triple. introv M MH MQ HF. applys* eval_conseq. Qed.
 
 (** The crux of the proof of the frame rule is to argue that [eval] is stable
     under extension with a disjoint piece of heap. *)
+
 
 Lemma eval_frame : forall h1 h2 t Q,
   eval h1 t Q ->
@@ -853,7 +864,10 @@ Qed.
 Lemma triple_hexists : forall t (A:Type) (J:A->hprop) Q,
   (forall (x:A), triple t (J x) Q) ->
   triple t (hexists J) Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. hnf in *. intros. destruct H0. specialize (H x). hnf in H.
+  apply H. assumption.
+Qed.
 
 (** [] *)
 
@@ -874,7 +888,10 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma triple_named_heap : forall t H Q,
   (forall h, H h -> triple t (= h) Q) ->
   triple t H Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  hnf. intros. specialize (H0 s). apply H0; auto.
+Qed.
 
 (** [] *)
 
@@ -900,7 +917,15 @@ Module AlternativeExistentialRule.
 Lemma triple_hexists2 : forall A (Hof:A->hprop) (Qof:A->val->hprop) t,
   (forall x, triple t (Hof x) (Qof x)) ->
   triple t (\exists x, Hof x) (fun v => \exists x, Qof x v).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply triple_hexists.
+  intros. specialize (H x).
+  apply triple_conseq with (H' := Hof x) (Q' := Qof x); auto.
+  xsimpl.
+Qed.
+
+
 
 (* [] *)
 
@@ -913,7 +938,12 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma triple_hexists_of_triple_hexists2 : forall t (A:Type) (Hof:A->hprop) Q,
   (forall x, triple t (Hof x) Q) ->
   triple t (\exists x, Hof x) Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply triple_conseq with (Q' := fun v : val => \exists _ : A, Q v) (H' := \exists x : A, Hof x); auto.
+  - apply triple_hexists2 in H. apply H.
+  - xsimpl.
+Qed.
 
 (* [] *)
 
@@ -1115,7 +1145,12 @@ Inductive seval : heap->trm->(val->hprop)->Prop :=
 Lemma seval_val_inv : forall s v Q,
   seval s v Q ->
   Q v s.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  inversion H; subst; auto.
+  pose proof (reducible_val_inv H0). destruct H2.
+Qed.
+  
 
 (** [] *)
 
@@ -1129,7 +1164,13 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma seval_terminates : forall s t Q,
   seval s t Q ->
   terminates s t.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  induction H; subst.
+  - apply terminates_step. intros.
+    inversion H0.
+  - apply terminates_step. intros. apply H1. assumption.
+Qed.
 
 (** [] *)
 
@@ -1140,7 +1181,23 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma seval_safe : forall s t Q,
   seval s t Q ->
   safe s t.
-Proof using. (* FILL IN HERE *) Admitted.
+  (*
+  If all executions of t from state s terminate and satisfy Q, 
+  then for all s' t' such that (s, t) ~> (s' t'), either t' is a value or 
+  (s', t') is reducible(it can take a step)
+  *)
+Proof using.
+  intros.
+  induction H; subst.
+  - unfold safe. intros. inversion H0;subst.
+    + left. simpl. apply I.
+    + inversion H1.
+  - (* step of seval *)
+    unfold safe.
+    intros. inversion H2; subst.
+    + right. assumption.
+    + apply H1 in H3. unfold safe in H3. apply H3. assumption.
+Qed.
 
 (** [] *)
 
@@ -1151,7 +1208,18 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma seval_correct : forall s t Q,
   seval s t Q ->
   correct s t Q.
-Proof using. (* FILL IN HERE *) Admitted.
+  (*
+  If all executions of t from state s terminate and satisfy Q, 
+  then forall s' t', steps s t s' t' -> Q t' s'.
+  *)
+Proof using.
+  intros.
+  induction H; subst.
+  - unfold correct. intros. inversion H0; subst; auto. inversion H1.
+  - unfold correct. intros. inversion H2; subst.
+    + apply reducible_val_inv in H. destruct H.
+    + apply H1 in H3. unfold correct in H3. apply H3. assumption.
+Qed.
 
 (** [] *)
 
@@ -1216,11 +1284,53 @@ Qed.
 
     Prove the big-step reasoning rule for sequence for [seval]. *)
 
+(*
+Consider a sequence [trm_seq t1 t2] in a state [s]. What is the
+requirement for this configuration to terminate with postcondition [Q]?
+First, we need the evaluation of [t1] in [s] to terminate. Let [Q1] be (an
+overapproximation of) the set of possible results for the execution of
+[(s,t1)]. Then, to prove that the sequence [trm_seq t1 t2] terminates in
+[Q], we need to show that, for any intermediate state [s2] satisfying
+[Q1], the evaluation of [t2] terminates with postcondition [Q].
+
+| eval_seq : forall Q1 s t1 t2 Q,
+    eval s t1 Q1 ->
+    (forall v1 s2, Q1 v1 s2 -> eval s2 t2 Q) ->
+    eval s (trm_seq t1 t2) Q
+
+seval_step
+reducible s t ->
+(∀ s' t', step s t s' t' → seval s' t' Q) → seval s t Q
+*)
+
+Require Import Program.Equality.
 Lemma seval_seq : forall s t1 t2 Q1 Q,
-  seval s t1 Q1 ->
-  (forall s1 v1, Q1 v1 s1 -> seval s1 t2 Q) ->
+  seval s t1 Q1 -> (* (s, t1) terminates satisfying Q1 *)
+  (forall s1 v1, Q1 v1 s1 -> seval s1 t2 Q) -> (* (s1, t2), where s1 satisfies Q1, terminates satisfying Q *)
   seval s (trm_seq t1 t2) Q.
-Proof using. (* FILL IN HERE *) Admitted.
+  (*
+  if (s, t1) terminates and satisfies t1,
+  if value v1 in heap s1 satifies Q1, then (s1, t2) satifies Q
+  *)
+Proof using.
+  introv E M. apply seval_step. 
+  - (*(s, t1;t2) is reducible *) inversion E; subst.
+    + apply M in H. unfold reducible. exists s t2. apply step_seq.
+    + (* t1 evaluates to some other state *)
+      unfold reducible in H.
+      destruct H as (s' & t' & H).
+      (* (s, t1) ~> (s' t') *)
+      unfold reducible. exists s' (<{t';t2}>). apply step_seq_ctx.
+      assumption.
+  - (* (s, t1;t2) ~> (s', t2), Q s' t' *) 
+    induction E; simpl in *; intros.
+    + intros. inversion H0; subst.
+      * inversion H6.
+      * apply M with (v1 := v). assumption.
+    + destruct H as (s_1 & t_1 & H). inversion H2; subst.
+      * eapply H1; eauto.
+
+
 
 (** [] *)
 
