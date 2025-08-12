@@ -1303,7 +1303,6 @@ reducible s t ->
 (∀ s' t', step s t s' t' → seval s' t' Q) → seval s t Q
 *)
 
-Require Import Program.Equality.
 Lemma seval_seq : forall s t1 t2 Q1 Q,
   seval s t1 Q1 -> (* (s, t1) terminates satisfying Q1 *)
   (forall s1 v1, Q1 v1 s1 -> seval s1 t2 Q) -> (* (s1, t2), where s1 satisfies Q1, terminates satisfying Q *)
@@ -1313,24 +1312,39 @@ Lemma seval_seq : forall s t1 t2 Q1 Q,
   if value v1 in heap s1 satifies Q1, then (s1, t2) satifies Q
   *)
 Proof using.
-  introv E M. apply seval_step. 
-  - (*(s, t1;t2) is reducible *) inversion E; subst.
-    + apply M in H. unfold reducible. exists s t2. apply step_seq.
-    + (* t1 evaluates to some other state *)
-      unfold reducible in H.
-      destruct H as (s' & t' & H).
-      (* (s, t1) ~> (s' t') *)
-      unfold reducible. exists s' (<{t';t2}>). apply step_seq_ctx.
-      assumption.
-  - (* (s, t1;t2) ~> (s', t2), Q s' t' *) 
-    induction E; simpl in *; intros.
-    + intros. inversion H0; subst.
-      * inversion H6.
-      * apply M with (v1 := v). assumption.
-    + destruct H as (s_1 & t_1 & H). inversion H2; subst.
-      * eapply H1; eauto. admit.
-Admitted.
+  introv E. gen Q t2.
+  induction E; intros; apply seval_step.
+  - unfold reducible. exists s <{t2}>. apply step_seq.
+  - intros. inversion H1; subst.
+    + inversion H7.
+    + apply H0 with (v1 := v). assumption.
+  - unfold reducible in *. destruct H as (s' & t' & H).
+    exists s' <{{t'};{t2}}>. apply step_seq_ctx. assumption.
+  - intros. inversion H3; subst.
+    + apply H1; auto.
+    + inversion H3; subst.
+      * inversion H9.
+      * destruct H as (s_1 & t_1 & H). inversion H.
+Qed.
 
+Lemma seval_seq' : forall s t1 t2 Q1 Q,
+  seval s t1 Q1 -> (* (s, t1) terminates satisfying Q1 *)
+  (forall s1 v1, Q1 v1 s1 -> seval s1 t2 Q) -> (* (s1, t2), where s1 satisfies Q1, terminates satisfying Q *)
+  seval s (trm_seq t1 t2) Q.
+Proof.
+  fix IH 6.
+  introv M1 M2. destruct M1 as [s v Q1 HQ1 | s t Q1 (s' & t' & claim) ACC].
+  - econstructor 2.
+    + do 2 esplit. eapply step_seq.
+    + intros s' t' STEP. inversion STEP; subst; clear STEP.
+      * inversion H4.
+      * eapply M2. apply HQ1.
+  - econstructor 2.
+    + esplit. esplit. eapply step_seq_ctx. exact claim.
+    + intros s'' t'' R. inversion R; subst; clear R.
+      * eapply IH with (Q1 := Q1); eauto.
+      * inversion claim.
+Qed.
 
 
 (** [] *)
@@ -1344,7 +1358,21 @@ Lemma seval_let : forall s x t1 t2 Q1 Q,
   seval s t1 Q1 ->
   (forall s1 v1, Q1 v1 s1 -> seval s1 (subst x v1 t2) Q) ->
   seval s (trm_let x t1 t2) Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  introv E. gen Q t2.
+  induction E; intros; apply seval_step.
+  - unfold reducible. exists s (subst x v t2). apply step_let.
+  - intros. inversion H1; subst.
+    + inversion H8.
+    + apply H0. assumption.
+  - unfold reducible in *. destruct H as (s' & t' & H). exists s' (trm_let x t' t2).
+    apply step_let_ctx. assumption.
+  - intros. inversion H3; subst.
+    + apply H1; auto.
+    + inversion H3; subst.
+      * inversion H9.
+      * destruct H as (a & b & c). inversion c.
+Qed.
 
 (** [] *)
 

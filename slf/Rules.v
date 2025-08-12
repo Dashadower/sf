@@ -59,7 +59,10 @@ Lemma triple_seq : forall t1 t2 H Q H1,
 
     Prove [triple_seq] by unfolding [triple] and using [eval_seq]. *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  unfold triple. intros.
+  apply H0 in H3 as H4. apply eval_seq with (Q1 := fun _ => H1); auto.
+Qed.
 
 (** [] *)
 
