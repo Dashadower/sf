@@ -130,7 +130,14 @@ Lemma triple_if_case : forall b t1 t2 H Q,
     Prove [triple_if_case] by unfolding [triple] and using [eval_if]. Hint: use
     the tactic [case_if] to perform a case analysis. *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  unfold triple.
+  intros. apply eval_if.
+  case_if.
+  - apply H0; auto.
+  - apply H1; auto.
+Qed.
 
 (** [] *)
 
@@ -178,7 +185,12 @@ Proof using. introv M Hs. applys* eval_val. Qed.
 
 Lemma triple_val_minimal : forall v,
   triple (trm_val v) \[] (fun r => \[r = v]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  unfold triple. intros. apply eval_val.
+  apply hpure_intro_hempty; auto.
+Qed.
+  
 
 (** [] *)
 
@@ -192,7 +204,14 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma triple_val' : forall v H Q,
   H ==> Q v ->
   triple (trm_val v) H Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply triple_conseq_frame with (H1 := \[]) (H2 := H) (Q1 := (fun r => \[r = v])).  
+  - apply triple_val_minimal.
+  - xsimpl.
+  - xsimpl. intros. subst. assumption.
+Qed.
+
 
 (** [] *)
 
@@ -207,7 +226,16 @@ Proof using. (* FILL IN HERE *) Admitted.
         triple (trm_let x v1 t2) H Q.
 *)
 
-(* FILL IN HERE *)
+Lemma triple_let_val : forall x v1 t2 H Q,
+  H ==> Q v1 -> (forall v3 (s2 : heap), H ==> Q v1 -> eval s2 (subst x v3 t2) Q) ->
+  triple (subst x v1 t2) H Q -> 
+  triple (trm_let x v1 t2) H Q.
+Proof.
+  introv E M.
+  unfold triple in *. intros. apply eval_let with (Q1 := Q).
+  - hnf in H0. apply eval_val. apply E. assumption.
+  - intros. apply M. apply E.
+Qed.
 
 (** [] *)
 
@@ -418,7 +446,11 @@ Lemma triple_rand : forall n,
   triple (val_rand n)
     \[]
     (fun r => \[exists n1, r = val_int n1 /\ 0 <= n1 < n]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. hnf. intros. apply eval_rand; auto.
+  intros. apply hpure_intro_hempty; auto.
+  exists n1. auto.
+Qed.
 
 (** [] *)
 
@@ -483,7 +515,13 @@ Lemma triple_free' : forall p v,
   triple (val_free (val_loc p))
     (p ~~> v)
     (fun r => \[r = val_unit]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. unfold triple.
+  intros h H. apply eval_free.
+  - inversion H. apply Fmap.indom_single.
+  - inversion H. simpl. rewrite Fmap.remove_single.
+    apply hpure_intro. reflexivity.
+Qed.
 
 (** [] *)
 
@@ -535,7 +573,14 @@ Lemma triple_set : forall w p v,
   triple (val_set (val_loc p) v)
     (p ~~> w)
     (fun r => \[r = val_unit] \* (p ~~> v)).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  intros h H. apply eval_set.
+  - inversion H. apply Fmap.indom_single.
+  - inversion H. rewrite Fmap.update_single. 
+    rewrite hstar_hpure_l. split; auto.
+    subst. apply hsingle_intro.
+Qed.
 
 (** [] *)
 
