@@ -731,7 +731,25 @@ Lemma triple_succ_using_incr : forall (n:int),
     [applys triple_val] for reasoning about the final return value, namely [x].
     *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. applys triple_app_fun.
+  { reflexivity. }
+  simpl.
+  applys triple_let.
+  { apply triple_ref. }
+  intros.
+  simpl. applys triple_hexists. intros.
+  apply triple_hpure. intros. subst.
+  applys triple_seq.
+  { applys triple_incr. }
+  applys triple_let.
+  { applys triple_get. }
+  intros.
+  simpl. apply triple_hpure. intros. subst. applys triple_seq.
+  { applys triple_free. }
+  applys triple_val. xsimpl. reflexivity.
+Qed.
+
 
 (** [] *)
 
@@ -776,7 +794,11 @@ Lemma triple_eval_like : forall t1 t2 H Q,
   eval_like t1 t2 ->
   triple t1 H Q ->
   triple t2 H Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  unfold triple in H1.
+  intros h H2. unfold eval_like in H0. apply H0. apply H1. assumption.
+Qed.
 
 (** [] *)
 
@@ -798,9 +820,49 @@ Qed.
     Prove that the symmetric relation [eval_like (trm_let x t x) t] also holds.
     *)
 
+Lemma istrue_var_refl : forall (x : var),
+  isTrue (x = x) = true.
+Proof.
+  intros.
+  apply isTrue_eq_true. reflexivity.
+Qed.
+
 Lemma eval_like_eta_expansion : forall (t:trm) (x:var),
   eval_like (trm_let x t x) t.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  (* introv R.
+  inversion R. subst. simpl in H5. rewrite var_eq_spec in H5.
+  rewrite istrue_var_refl in H5.
+  induction t.
+  - inversion H4. subst. apply H5. assumption.
+  - inversion H4.
+  - inversion H4. subst. apply H5 in H3. apply eval_fun. inversion H3. subst.
+    assumption.
+  - inversion H4. subst. apply H5 in H6. apply eval_fix. inversion H6. assumption.
+  - 
+
+  intros t.
+  induction t; introv R; inversion R; subst; simpl in H5; rewrite var_eq_spec in H5;
+  rewrite istrue_var_refl in H5.
+  - inversion H4; subst. apply H5. assumption.
+  - inversion H4.
+  - inversion H4. subst. apply H5 in H3. apply eval_fun. inversion H3; subst.
+    assumption.
+  - inversion H4. subst. apply H5 in H6. apply eval_fix. inversion H6. assumption.
+  - specialize (IHt1 x). specialize (IHt2 x). *)
+
+
+  introv R.
+
+  inversion R; subst. simpl in H5. rewrite var_eq_spec in H5.
+  rewrite istrue_var_refl in H5.
+  (* show that eval s t Q1 results in all evaluations of (s, t) end as a value *)
+  induction H4; auto.
+  - apply H5 in H. apply eval_fun. inversion H. assumption.
+  - apply eval_fix. apply H5 in H. inversion H. assumption.
+  - Admitted.
+  
+  
 
 (** [] *)
 
@@ -812,7 +874,16 @@ Proof using. (* FILL IN HERE *) Admitted.
 
 Lemma eta_same_triples : forall (t:trm) (x:var) H Q,
    triple t H Q <-> triple (trm_let x t x) H Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  split; intros.
+  - hnf in *. intros. specialize (H0 s H1).
+    apply eval_like_eta_reduction with (x := x) in H0.
+    assumption.
+  - hnf in *. intros. specialize (H0 s H1).
+    apply eval_like_eta_expansion with (x := x) in H0.
+    assumption.
+Qed.
 
 (** [] *)
 
@@ -843,7 +914,12 @@ Qed.
 Lemma triple_trm_seq_assoc : forall t1 t2 t3 H Q,
   triple (trm_seq (trm_seq t1 t2) t3) H Q ->
   triple (trm_seq t1 (trm_seq t2 t3)) H Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. applys triple_eval_like H0.
+  introv R. inversion R. subst. inversion H4. subst.
+  apply eval_seq with (Q1 := Q2); auto. intros. apply H8 in H1.
+  apply eval_seq with (Q1 := Q1); auto.
+Qed.
 
 (** [] *)
 
@@ -883,7 +959,14 @@ Lemma triple_let_frame : forall x t1 t2 Q1 H H1 H2 Q,
 
     Prove the let-frame rule. *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply triple_frame with (H' := H2) in H0.
+  hnf in *. intros h H5.
+  apply eval_let with (Q1 := fun v => Q1 v \* H2).
+  - apply H0. apply H3 in H5. assumption.
+  - intros v1 h2 H6. unfold triple in H4. apply H4. assumption.
+Qed.
 
 (** [] *)
 
@@ -933,7 +1016,11 @@ Lemma triple_div_from_triple_div' : forall n1 n2,
   triple (val_div n1 n2)
     \[]
     (fun r => \[r = val_int (Z.quot n1 n2)]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. pose proof (triple_div').
+  specialize (H0 n1 n2). unfold triple in *. intros. apply H0.
+  apply hpure_intro_hempty; assumption.
+Qed.
 
 (** [] *)
 
@@ -1021,7 +1108,23 @@ Lemma triple_factorec : forall n,
   triple (factorec n)
     \[]
     (fun r => \[r = facto n]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros n.
+  induction_wf IH: (downto 0) n.
+  intros.
+  eapply triple_app_fix.
+  { reflexivity. }
+  simpl. apply triple_let with (Q1 := fun v => \[v = isTrue (n <= 1)]).
+  { apply triple_le. }
+  intros. apply triple_hpure'. intros. simpl.
+  subst.
+  applys triple_if. case_if as C.
+  - apply triple_val. xsimpl. symmetry. rewrite facto_init; math.
+  - apply triple_let with (Q1 := fun v => \[v = n - 1]).
+    { apply triple_sub. }
+    intros. simpl.
+    eapply triple_let.
+    + apply triple_hpure'. intros. eapply IH.
 
 (** [] *)
 
