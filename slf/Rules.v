@@ -1124,7 +1124,12 @@ Proof using.
     { apply triple_sub. }
     intros. simpl.
     eapply triple_let.
-    + apply triple_hpure'. intros. eapply IH.
+    + apply triple_hpure'. intros. rewrite H0. eapply IH; math.
+    + simpl. intros. apply triple_hpure'. intros.
+      rewrite H0. hnf. intros. rewrite facto_step with (n := n);  try math.
+      apply triple_mul. assumption.
+Qed.
+
 
 (** [] *)
 
