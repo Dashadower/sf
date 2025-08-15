@@ -155,7 +155,15 @@ Definition hor (H1 H2 : hprop) : hprop :=
 
 Lemma hor_eq_hor' :
   hor = hor'.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using. 
+  apply functional_extensionality. intros.
+  apply functional_extensionality. intros.
+  xsimpl; unfold hor; unfold hor'.
+  - xpull. intros. destruct x1; hnf; intros; auto.
+  - hnf. intros. destruct H.
+    + apply hexists_intro with (x := true). assumption.
+    + apply hexists_intro with (x := false). assumption.
+Qed.
 
 (** [] *)
 
@@ -212,7 +220,11 @@ Proof using. intros. case_if*. Qed.
 
 Lemma hor_comm : forall H1 H2,
   hor H1 H2 = hor H2 H1.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. apply hprop_op_comm. intros.
+  unfold hor. xpull. intros. rewrite if_neg. hnf.
+  intros. exists (!x). assumption.
+Qed.
 
 (** [] *)
 
@@ -235,8 +247,25 @@ Lemma MList_using_hor : forall L p,
          (\exists x q L', \[L = x::L']
                        \* (p ~~~>`{ head := x; tail := q})
                        \* (MList L' q)).
-Proof using. (* FILL IN HERE *) Admitted.
-
+Proof using.
+  intros.
+  apply himpl_antisym; destruct L eqn:EqL.
+  - unfold hor. exists true. inversion H. apply hpure_intro_hempty; auto.
+  - subst. exists false. rewrite MList_cons in H. destruct H.
+    inversion H. destruct H0 as (h2 & H0 & H1 & H2 & H3).
+    exists v x l. rewrite H3 in *. rewrite hstar_hpure_l.
+    split; auto.
+  - unfold hor. subst. xpull. intros. 
+    case_if.
+    + xpull. intros. destruct H. subst. hnf. intros. rewrite MList_nil.
+      apply hpure_intro_hempty; auto.
+    + xpull.
+  - unfold hor. subst. xpull. intros.
+    case_if.
+    + xpull. intros. destruct H. inversion H.
+    + xpull. intros. inversion H. subst. clear H. hnf.
+      intros. rewrite MList_cons. exists x1. assumption.
+Qed.
 (** [] *)
 
 End HorExample.
@@ -271,7 +300,18 @@ Definition hand (H1 H2 : hprop) : hprop :=
 
 Lemma hand_eq_hand' :
   hand = hand'.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  apply functional_extensionality. intros.
+  apply functional_extensionality. intros.
+  unfold hand.
+  unfold hand'.
+  xsimpl.
+  - hnf. intros. split.
+    + apply hforall_specialize with (v := true) in H. assumption.
+    + apply hforall_specialize with (v := false) in H. assumption.
+  - hnf. intros. destruct H.
+    apply hforall_intro. intros. destruct x1; auto.
+Qed.
 
 (** [] *)
 
@@ -306,7 +346,12 @@ Proof using. introv M1 M2 Hh. intros b. case_if*. Qed.
 
 Lemma hand_comm : forall H1 H2,
   hand H1 H2 = hand H2 H1.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. apply hprop_op_comm. intros.
+   hnf. unfold hand. intros. apply hforall_intro.
+   intros. rewrite if_neg. specialize (H (!x)).
+   simpl in H. assumption.
+Qed.
 
 (** [] *)
 
@@ -418,7 +463,11 @@ Lemma hwand_cancel : forall H1 H2,
   H1 \* (H1 \-* H2) ==> H2.
 Proof using. intros. applys himpl_hwand_r_inv. applys himpl_refl. Qed.
 
+Print hwand_cancel.
+
 Arguments hwand_cancel : clear implicits.
+
+Print hwand_cancel.
 
 (* ----------------------------------------------------------------- *)
 (** *** Further Properties of [hwand] *)
@@ -483,7 +532,11 @@ Qed.
 Lemma hwand_hpure_l : forall P H,
   P ->
   (\[P] \-* H) = H.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. unfold hwand. xsimpl.
+  - intros. xchange H1. assumption.
+  - xsimpl.
+Qed.
 
 (** [] *)
 
@@ -503,8 +556,12 @@ Proof using. introv M. applys himpl_hwand_r. xsimpl. applys M. Qed.
     on the right-hand side of the entailment should be instantiated. *)
 Lemma himpl_hwand_hpure_lr : forall (P1 P2:Prop),
   \[P1 -> P2] ==> (\[P1] \-* \[P2]).
-Proof using. (* FILL IN HERE *) Admitted.
-
+Proof using.
+  intros.
+  xpull. intros. unfold hwand. hnf. intros. exists (\[P1 -> P2]). rewrite hstar_hpure_l.
+  split; auto. apply hpure_intro_hempty; auto.
+  xpull. intros. apply himpl_hempty_hpure. auto.
+Qed.
 (** [] *)
 
 (** Another interesting property is that arguments on the LHS of a magic wand
@@ -538,6 +595,7 @@ Qed.
     way to read this: "if you own [H3] and, when given [H1], you own [H2], then,
     when given [H1], you own both [H2] and [H3]." *)
 
+
 Lemma hstar_hwand : forall H1 H2 H3,
   (H1 \-* H2) \* H3 ==> H1 \-* (H2 \* H3).
 Proof using.
@@ -558,7 +616,8 @@ Qed.
 
 Lemma himpl_hwand_hstar_same_r : forall H1 H2,
   H1 ==> (H2 \-* (H2 \* H1)).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
 
 (** [] *)
 
