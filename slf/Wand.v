@@ -617,7 +617,12 @@ Qed.
 Lemma himpl_hwand_hstar_same_r : forall H1 H2,
   H1 ==> (H2 \-* (H2 \* H1)).
 Proof using.
-  intros.
+  intros. hnf. intros. apply hstar_hwand. rewrite hstar_comm.
+  apply hstar_intro with (H2 := (H2 \-* H2)) (h2 := Fmap.empty) in H; auto.
+  - rewrite union_empty_r in H. assumption.
+  - applys himpl_hempty_hwand_same. apply hempty_intro.
+Qed.
+  
 
 (** [] *)
 
@@ -627,7 +632,11 @@ Proof using.
 
 Lemma hwand_cancel_part : forall H1 H2 H3,
   H1 \* ((H1 \* H2) \-* H3) ==> (H2 \-* H3).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. Set Printing Parentheses.
+  rewrite hwand_curry_eq. apply hwand_cancel.
+Qed.
+  
 
 (** [] *)
 
@@ -638,7 +647,11 @@ Proof using. (* FILL IN HERE *) Admitted.
 
 Lemma hwand_frame : forall H1 H2 H3,
   H1 \-* H2 ==> (H1 \* H3) \-* (H2 \* H3).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. rewrite hwand_curry_eq. rewrite hstar_comm with (H2 := H3).
+  eapply hwand_himpl; auto.
+  apply himpl_hwand_hstar_same_r.
+Qed.
 
 (** [] *)
 
@@ -653,9 +666,14 @@ Lemma hwand_inv : forall h1 h2 H1 H2,
   H1 h1 ->
   Fmap.disjoint h1 h2 ->
   H2 (h1 \u h2).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. pose proof (hwand_cancel H1 H2). apply H4.
+  apply hstar_intro; auto.
+Qed.
 
 (** [] *)
+
+Unset Printing Parentheses.
 
 End Hwand.
 
@@ -748,7 +766,9 @@ Qed.
 
 Lemma himpl_qwand_hstar_same_r : forall H Q,
   H ==> Q \--* (Q \*+ H).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. rewrite qwand_equiv. xsimpl.
+Qed.
 
 (** [] *)
 
@@ -759,7 +779,14 @@ Proof using. (* FILL IN HERE *) Admitted.
 
 Lemma qwand_cancel_part : forall H Q1 Q2,
   H \* ((Q1 \*+ H) \--* Q2) ==> (Q1 \--* Q2).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. Set Printing Parentheses.
+  rewrite qwand_equiv.
+  rewrite hstar_comm.
+  intros x.
+  xchange (qwand_specialize x). rewrite hstar_comm. apply hwand_cancel.
+Qed.
+  
 
 (** [] *)
 
