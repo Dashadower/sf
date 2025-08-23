@@ -316,7 +316,12 @@ Proof using. introv M. xchange M. applys wp_ramified. Qed.
 Lemma wp_conseq_of_wp_ramified : forall t Q1 Q2,
   Q1 ===> Q2 ->
   wp t Q1 ==> wp t Q2.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply wp_ramified_trans with (Q1 := Q1). xsimpl.
+  auto.
+Qed.
+
 
 (** [] *)
 
@@ -327,7 +332,18 @@ Proof using. (* FILL IN HERE *) Admitted.
 
 Lemma wp_frame_of_wp_ramified : forall t H Q,
   (wp t Q) \* H ==> wp t (Q \*+ H).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  (* wp_ramified eliminated H *)
+  intros.
+  Set Printing Parentheses.
+  (* applys wp_ramified_trans. *)
+  (* xsimpl. *)
+  apply wp_ramified_trans with (Q1 := Q). 
+  apply himpl_frame_r.
+  apply qwand_equiv. hnf. auto.
+Qed.
+
+  
 
 (** [] *)
 
