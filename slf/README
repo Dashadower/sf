@@ -24,4 +24,4 @@ covering volume 6, entitled "Separation Logic Foundations".
   - Other *.v files
     Implementation of CFML
 
-Basic -> Repr -> Hprop -> Himpl -> Triples -> Rules -> Wand -> WPsem -> WPgen -> WPsound -> Affine -> Arrays -> Records
+Basic -> Repr -> Hprop -> Himpl -> Triples -> Rules -> Wand -> | WPsem -> WPgen -> WPsound -> Affine -> Arrays -> Records

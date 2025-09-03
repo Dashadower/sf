@@ -480,7 +480,11 @@ Proof using. unfold wp. intros. intros h K. applys* eval_if. Qed.
 
 Lemma wp_if' : forall b t1 t2 Q,
   (if b then (wp t1 Q) else (wp t2 Q)) ==> wp (trm_if b t1 t2) Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  unfold wp.
+  case_if; hnf; intros; apply eval_if; assumption.
+Qed.
 
 (** [] *)
 
@@ -530,12 +534,31 @@ Parameter triple_conseq_frame : forall H2 H1 Q1 t H Q,
     Prove the combined structural rule in [wp] style. Hint: exploit
     [wp_conseq_trans] and [wp_frame]. *)
 
+(*
+Lemma wp_conseq_trans : forall t H1 H2 Q1 Q2,
+  H1 ==> wp t Q1 ->
+  H2 ==> H1 ->
+  Q1 ===> Q2 ->
+  H2 ==> wp t Q2.
+
+wp_frame
+     : forall (t : trm) H Q, ((wp t Q) \* H) ==> (wp t (Q \*+ H))
+*)
+
 Lemma wp_conseq_frame_trans : forall t H H1 H2 Q1 Q,
   H1 ==> wp t Q1 ->
   H ==> H1 \* H2 ->
   Q1 \*+ H2 ===> Q ->
   H ==> wp t Q.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply wp_conseq_trans with (Q1 := (Q1 \*+ H2)) (H1 := wp t Q1 \* H2); auto.
+  - apply wp_frame.
+  - apply himpl_trans with (H2 := (H1 \* H2)).
+    + assumption.
+    + unfold wp in *. apply himpl_frame_lr; auto.
+Qed.
+  
 
 (** [] *)
 
@@ -554,7 +577,15 @@ Proof using. (* FILL IN HERE *) Admitted.
 Lemma wp_conseq_frame : forall t H Q1 Q2,
   Q1 \*+ H ===> Q2 ->
   (wp t Q1) \* H ==> (wp t Q2).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  pose proof wp_conseq.
+  specialize (H1 t (Q1 \*+ H) Q2).
+  apply H1 in H0.
+  eapply himpl_trans.
+  - apply wp_frame.
+  - assumption.
+Qed.
 
 (** [] *)
 
@@ -592,11 +623,23 @@ Definition wp_1 (t:trm) (Q:val->hprop) : hprop :=
 
     Prove that the alternative definition [wp_1] satisfies the characteristic
     equivalence for weakest preconditions. Hint: use the consequence rule and
-    the extraction rules. *)
+    the extraction rules. 
+
+triple_hpure
+forall [t : trm] [P] [H] [Q],
+  (P -> triple t H Q) -> triple t (\[P] \* H) Q
+
+triple_hexists
+forall [t : trm] [A : Type] [J : A -> hprop] [Q],
+  (forall x : A, triple t (J x) Q) -> (triple t (\exists  xn,  (J xn)) Q)
+  *)
 
 Lemma wp_equiv_1 : forall t H Q,
   (H ==> wp_1 t Q) <-> (triple t H Q).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros. unfold wp_1.
+  split; intros.
+  - apply triple_conseq_frame.
 
 (** [] *)
 
