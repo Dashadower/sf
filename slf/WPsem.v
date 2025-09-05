@@ -632,15 +632,31 @@ forall [t : trm] [P] [H] [Q],
 triple_hexists
 forall [t : trm] [A : Type] [J : A -> hprop] [Q],
   (forall x : A, triple t (J x) Q) -> (triple t (\exists  xn,  (J xn)) Q)
-  *)
+
+triple_conseq
+(triple t H' Q') -> ((H ==> H') ->
+((Q' ===> Q) -> (triple t H Q)))
+
+hexists_inv
+forall [A : Type] [J : A -> hprop] [h],
+((\exists  xn,  (J xn)) h) -> (exists x : A, (J x h))
+
+Lemma hstar_hexists : forall A (J:A->hprop) H,
+  (\exists x, J x) \* H = \exists x, (J x \* H).
+*)
 
 Lemma wp_equiv_1 : forall t H Q,
   (H ==> wp_1 t Q) <-> (triple t H Q).
 Proof using.
   intros. unfold wp_1.
   split; intros.
-  - apply triple_conseq_frame.
-
+  - hnf in *. intros. apply H0 in H1. apply hexists_inv in H1.
+    destruct H1 as (H' & H1). apply hstar_inv in H1.
+    unfold triple in H1. destruct H1 as (h1 & h2 & H1 & H2 & H3 & H4).
+    apply hpure_inv in H2. destruct H2. subst. rewrite Fmap.union_empty_r.
+    apply H2. assumption.
+  - apply himpl_hexists_r with (x := H). xsimpl. assumption.
+Qed.
 (** [] *)
 
 End WpFromTriple.
@@ -667,11 +683,21 @@ Definition wp_2 (t:trm) (Q:val->hprop) : hprop :=
     Prove that the low-level definition [wp_2] also satisfies the characteristic
     equivalence [H ==> wp Q <-> triple t H Q]. Hint: exploit the lemma
     [triple_named_heap] which was established as an exercise in the chapter
-    [Triples]. *)
+    [Triples]. 
+
+Lemma triple_named_heap : forall t H Q,
+  (forall h, H h -> triple t (= h) Q) ->
+  triple t H Q.
+*)
 
 Lemma wp_equiv_2 : forall t H Q,
   (H ==> wp_2 t Q) <-> (triple t H Q).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  split; unfold wp_2; intros.
+  - apply triple_named_heap. intros. apply H0. assumption.
+  - hnf. intros. hnf. intros. hnf in H0. subst. apply H0. assumption.
+Qed.
 
 (** [] *)
 
@@ -714,7 +740,17 @@ Lemma wp_equiv_iff_wp_pre_and_wp_weakest : forall wp',
    /\ (forall t H Q, triple t H Q -> H ==> wp' t Q)) (* [wp_weakest] *)
   <->
   (forall t H Q, H ==> wp' t Q <-> triple t H Q). (* [wp_equiv] *)
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  split; intros.
+  - destruct H.
+    split; intros.
+    + apply triple_conseq with (H' := (wp' t Q)) (Q' := Q); auto.
+    + apply H1. assumption.
+  - split; intros.
+    + apply H. auto.
+    + apply H. assumption.
+Qed.
 
 (** [] *)
 
@@ -908,7 +944,21 @@ Parameter triple_incr : forall (p:loc) (n:int),
     State a Texan triple for [incr] as a lemma called [wp_incr], then prove this
     lemma from [triple_incr]. *)
 
-(* FILL IN HERE *)
+(*
+(\forall p, (p ~~> v) \-* Q (val_loc p)) ==> wp (val_ref v) Q.
+*)
+
+Lemma wp_incr : forall Q p (n : int),
+    ((p ~~> n) \* ((p ~~> (n + 1)) \-* Q val_unit)) ==> wp (incr p) Q.
+Proof using.
+  intros. apply wp_equiv. pose proof triple_incr.
+  applys triple_conseq_frame.
+  - applys triple_incr.
+  - xsimpl.
+  - xsimpl. intros. subst. auto.
+Qed.
+  
+
 
 (** [] *)
 
