@@ -826,7 +826,38 @@ Abort.
 Lemma wpgen_conseq : forall t E Q1 Q2,
   Q1 ===> Q2 ->
   wpgen E t Q1 ==> wpgen E t Q2.
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros t.
+  induction t; intros.
+  - hnf in *. unfold wpgen. intros. apply H. assumption.
+  - unfold wpgen. destruct (lookup v E); auto.
+  - hnf in *. unfold wpgen. intros.
+    apply H in H0. assumption.
+  - hnf in *. unfold wpgen. intros. apply H in H0.
+    assumption.
+  - hnf in *. unfold wpgen. intros. apply hexists_inv in H0.
+    destruct H0. apply hexists_intro with (x := x).
+    apply hstar_inv in H0. destruct H0 as (h1 & h2 & H1 & H2 & H3 & H4).
+    rewrite H4. apply hstar_intro; auto. apply hpure_inv_hempty in H2.
+    destruct H2.
+    apply hpure_intro_hempty; auto. eapply triple_conseq.
+    apply H0. auto. hnf. auto.
+  - hnf in *. intros. simpl in *.
+    eapply IHt1. 
+    + hnf. intros. apply IHt2. hnf. apply H.
+    + assumption.
+  - hnf in *. simpl. intros.
+    eapply IHt1.
+    + hnf. intros. apply IHt2. hnf. apply H.
+    + assumption.
+  - hnf in *. simpl. intros. apply hexists_inv in H0.
+    destruct H0. apply hexists_intro with (x := x).
+    destruct H0 as (h1 & h2 & h3 & h4 & h5 & h6).
+    rewrite h6. apply hstar_intro; auto.
+    destruct x.
+    + apply IHt2 with (Q2 := Q2) in h4; auto.
+    + apply IHt3 with (Q2 := Q2) in h4; auto.
+Qed.
 
 (** [] *)
 
@@ -838,7 +869,9 @@ Proof using. (* FILL IN HERE *) Admitted.
 
 Lemma wpgen_frame : forall t E H Q,
   (wpgen E t Q) \* H ==> wpgen E t (Q \*+ H).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros t.
+  induction t.
 
 (** [] *)
 
