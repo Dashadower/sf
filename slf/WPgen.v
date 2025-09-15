@@ -871,7 +871,28 @@ Lemma wpgen_frame : forall t E H Q,
   (wpgen E t Q) \* H ==> wpgen E t (Q \*+ H).
 Proof using.
   intros t.
-  induction t.
+  induction t; intros.
+  - hnf. simpl. intros. assumption.
+  - hnf. simpl. intros.
+    destruct (lookup v E).
+    + destruct H0 as (h1 & h2 & h3 & h4 & h5 & h6).
+      rewrite h6. apply hstar_intro; auto.
+    + rewrite hfalse_hstar_any in H0. assumption.
+  - hnf. simpl. intros. assumption.
+  - hnf. simpl. intros. assumption.
+  - hnf. simpl. intros. apply hstar_inv in H0.
+    destruct H0 as (h1 & h2 & H0 & H1 & H2 & H3).
+    destruct H0 as (H' & H0).
+    destruct H0 as (h3 & h4 & H4 & H5 & H6 & H7).
+    apply hpure_inv in H5. destruct H5. subst.
+    apply hexists_intro with (x := H').
+    rewrite union_assoc.
+    apply hstar_intro; auto.
+    apply himpl_hempty_hpure.
+    (* rewrite hstar_hpure_r. *)
+    apply wp_equiv.
+    rewrite hstar_hpure_r.
+    
 
 (** [] *)
 
