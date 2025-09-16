@@ -885,13 +885,14 @@ Proof using.
     destruct H0 as (H' & H0).
     destruct H0 as (h3 & h4 & H4 & H5 & H6 & H7).
     apply hpure_inv in H5. destruct H5. subst.
-    apply hexists_intro with (x := H').
-    rewrite union_assoc.
+    apply hexists_intro with (x := H' \* H).
+    rewrite union_assoc. 
+    rewrite union_comm_of_disjoint with (h1 := Fmap.empty); auto.
+    rewrite <- union_assoc.
     apply hstar_intro; auto.
-    apply himpl_hempty_hpure.
-    (* rewrite hstar_hpure_r. *)
-    apply wp_equiv.
-    rewrite hstar_hpure_r.
+    + apply hstar_intro; auto.
+    + apply hpure_intro. apply triple_frame. assumption.
+  - 
     
 
 (** [] *)
