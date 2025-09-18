@@ -892,8 +892,23 @@ Proof using.
     apply hstar_intro; auto.
     + apply hstar_intro; auto.
     + apply hpure_intro. apply triple_frame. assumption.
-  - 
-    
+  - hnf. simpl. intros. inversion H0 as (h1 & H1). destruct H1 as (h2 & H2 & H3 & H4 & H5).
+    subst. apply IHt1 in H0. eapply wpgen_conseq.
+    + hnf. intros. apply IHt2.
+    + assumption.
+  - hnf. simpl. intros. inversion H0 as (h1 & h2 & H1 & H2 & H3 & H4). subst.
+    apply IHt1 in H0. eapply wpgen_conseq.
+    + hnf. intros. apply IHt2.
+    + assumption.
+  - hnf. simpl. intros. destruct H0 as (h1 & h2 & H0).  destruct H0 as (H0 & H1 & H2 & H3).
+    destruct H0 as (b & H0). apply hstar_inv in H0.
+    destruct H0 as (h3 & h4 & H4 & H5 & H6 & H7). subst.
+    apply hexists_intro with (x := b).
+    rewrite union_assoc. apply hstar_intro; auto.
+    destruct b.
+    + apply IHt2. apply hstar_intro; auto.
+    + apply IHt3. apply hstar_intro; auto.
+Qed.
 
 (** [] *)
 
