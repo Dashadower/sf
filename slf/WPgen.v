@@ -1495,7 +1495,14 @@ Lemma triple_succ_using_incr_with_xtactics : forall (n:int),
   triple (trm_app succ_using_incr n)
     \[]
     (fun v => \[v = n+1]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  xwp.
+  xstruct.
+  xlet. xstruct.
+  xapp. intros. xstruct. xseq. xstruct.
+  xapp. xstruct. xlet. xstruct. xapp. xstruct.
+  xseq. xstruct. xapp. xstruct. xval. xsimpl*.
+Qed.
 
 (** [] *)
 
@@ -1858,8 +1865,14 @@ Lemma triple_succtwice_using_xletval : forall (n:int),
   triple (succtwice n)
     \[]
     (fun r => \[r = n + 2]).
-Proof using. (* FILL IN HERE *) Admitted.
-
+Proof using.
+  intros.
+  xwp.
+  xlet.
+  xval.
+  xlet. xappfun. xapp. xappfun. xapp. xsimpl*. math.
+  
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (triple_succtwice_using_xfun)
@@ -1870,7 +1883,16 @@ Lemma triple_succtwice_using_xfun : forall (n:int),
   triple (succtwice n)
     \[]
     (fun r => \[r = n + 2]).
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  xwp.
+  xfun (fun (f:val) => forall (m:int),
+    triple <{ f ( m ) }> (\[]) (fun v => \[v = m + 1])).
+  - intros. eapply triple_app_fun.
+    + reflexivity.
+    + simpl. apply triple_add.
+  - intros. xlet. xapp. xapp. xsimpl. math. 
+Qed.
 
 (** [] *)
 
@@ -1958,7 +1980,11 @@ Lemma xconseq_lemma : forall Q1 Q2 H F,
 
     Prove the [xconseq_lemma]. *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using. 
+  intros.
+  apply mkstruct_conseq with (F := F) in H1. apply himpl_trans with (H1 := H) (H3 := mkstruct F Q2) in H0; assumption.
+Qed.
+
 
 (** [] *)
 
@@ -1984,7 +2010,19 @@ Lemma xframe_lemma : forall H1 H2 H Q Q1 F,
     Prove the [xframe_lemma]. Exploit the properties of [mkstruct]; do not try
     to unfold the definition of [mkstruct]. *)
 
-Proof using. (* FILL IN HERE *) Admitted.
+Proof using.
+  intros.
+  apply mkstruct_conseq with (F := F) in H4.
+  eapply himpl_trans in H4.
+  2: apply mkstruct_frame.
+  assert (H5: H1 \* H2 ==> mkstruct F Q1 \* H2). {
+    xsimpl. assumption.
+  }
+  apply himpl_trans with (H2 := H1 \* H2).
+  - assumption.
+  - eapply himpl_trans. apply H5. assumption.
+Qed.
+  
 
 (** [] *)
 
