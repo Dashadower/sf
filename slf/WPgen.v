@@ -2214,7 +2214,17 @@ Proof using.
  { applys himpl_hforall_r. intros vf. xchange (hforall_specialize vf).
    xsimpl. intros M. rewrite hwand_hpure_l. xsimpl.
    introv. rewrite wp_equiv. applys M. xsimpl. }
- (* FILL IN HERE *) Admitted.
+ { applys himpl_hforall_r. intros x. xsimpl. intros. xchange (hforall_specialize x).
+   rewrite hwand_hpure_l; auto.
+   intros.
+   assert (H1: H' ==> wp (x vx) Q'). {
+    eapply himpl_trans.
+    - apply H0.
+    - apply H.
+   }
+   rewrite wp_equiv in H1. assumption.
+ }
+Qed.
 
 (** [] *)
 
@@ -2473,6 +2483,8 @@ Definition forloop : val :=
     [intros i. induction_wf IH: (upto b) i. intros Hi.]. Besides, the tactics
     [math_rewrite] is helpful at one point in the proof. *)
 
+(* upto = fun b n m : int => n <= b /\ m < n *)
+
 Lemma triple_forloop : forall (I:int->hprop) (a b:int) (f:val),
   a <= b ->
   (forall i, a <= i <= b ->
@@ -2482,8 +2494,12 @@ Lemma triple_forloop : forall (I:int->hprop) (a b:int) (f:val),
   triple (forloop a b f)
     (I a)
     (fun r => I b).
-Proof using. (* FILL IN HERE *) Admitted.
-
+Proof using.
+  xwp.
+  xfun.
+  intros g. 
+  intros. xapp.
+  specialize (H1 a (I a)).
 (** [] *)
 
 End ExampleLocalFunWpgenRec.
