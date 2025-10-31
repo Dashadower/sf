@@ -3,7 +3,7 @@
 - `xwp` : initialize the proof by formatting the hoare triple
 - `xapp` : reason about the appication of a function. This can be pointer reads/writes, assignments, etc. It may modify the precondition to reflect variable updates.
 - `xapp H` : apply a lemma `H`. This is normally used to
-  progress a SL triple using `H`, as to `xchange` acting as vanilla `apply`
+  progress a SL triple using `H`, as to `xchange` acting as vanilla `apply` for heap entailment
 - `xsimpl` : like simpl, but works on SLF proofs
 - `xsimpl n m ...` : provide concrete arguments for matching. Use `__` istead of `_` for leaving holes.
 - `xsimpl*` : perform `xsimpl` and then `auto` immediately
@@ -23,6 +23,8 @@ Assume an entailment goal of the form `H1 \* H2 \* H3 ==> H4`. Assume an entailm
 - `xchanges*` do `xchanges` and then perform eauto. `E` is a lemma with a conclusion of the form `H1 = H2`.
 - `xchanges` is a shorthand for `xchange` followed with `xsimpl`.
 - `xfun` to reason about function definitions.
+  `xfun (fun (g: val) => spec)` lets you define a custom spec for the function body `g` 
+
 - `xtriple` convert a `triple () ()` into a pre-code-post format that x-tactics are admitted on.
 - `introv` (a TLC tactic) like `intros` but takes as arguments only the name of the hypotheses, not of all variables.
 - `rew_list` (a TLC tactic) to normalize list expressions.
