@@ -2483,7 +2483,13 @@ Definition forloop : val :=
     [intros i. induction_wf IH: (upto b) i. intros Hi.]. Besides, the tactics
     [math_rewrite] is helpful at one point in the proof. *)
 
-(* upto = fun b n m : int => n <= b /\ m < n *)
+(* upto = fun b n m : m < n <= b 
+xfun (fun (f:val) => forall (m:int),
+    triple (f())
+      (p ~~> m)
+      (fun _ => p ~~> (m+1))); intros f Hf.
+
+*)
 
 Lemma triple_forloop : forall (I:int->hprop) (a b:int) (f:val),
   a <= b ->
@@ -2496,10 +2502,19 @@ Lemma triple_forloop : forall (I:int->hprop) (a b:int) (f:val),
     (fun r => I b).
 Proof using.
   xwp.
-  xfun.
-  intros g. 
-  intros. xapp.
-  specialize (H1 a (I a)).
+  xfun (fun (g: val) => forall (i: int),
+    triple (g i)
+    (\[a <= i])
+    (fun _ => \[i = b])
+  ). {
+    intros g. intros. induction_wf IH: (upto b) i.
+    xapp. xapp. intros. rewrite H3. 
+    xif.
+    - intros. xseq. xapp H0; try math.
+      hnf. intros.
+    apply IH. 
+    
+  }
 (** [] *)
 
 End ExampleLocalFunWpgenRec.
